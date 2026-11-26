@@ -1,0 +1,20 @@
+// Locale entry point: add an English dictionary here without changing game systems.
+export const ko = {
+  newGame: "새로운 모험",
+  continue: "이어하기",
+  settings: "설정",
+  controls: "조작 방법",
+  credits: "제작진",
+  controlsList: [
+    ["A / D · ← / →", "이동"],
+    ["SPACE", "점프 · 길게 누르면 높이 점프"],
+    ["SHIFT", "대시 · 에너지 18"],
+    ["S / ↓", "아래 플랫폼 통과"],
+    ["J", "펄스 블래스터"],
+    ["F", "조사 · 채굴 · 회복"],
+    ["H", "회복 키트 사용"],
+    ["I", "인벤토리"],
+    ["M", "지역 지도"],
+    ["ESC", "일시정지"],
+  ],
+};

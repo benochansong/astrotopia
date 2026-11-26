@@ -1,4 +1,5 @@
-import { drawColony } from './colony-art';
+import { spaceBackground, spaceEnemy, spaceTerrain } from "./space-art";
+import { drawColony } from "./colony-art";
 import {
   frontierBackground,
   frontierStructures,
@@ -914,6 +915,7 @@ export class Art {
     c.globalAlpha = 1;
   }
   enemy(c: CanvasRenderingContext2D, e: Enemy, time: number) {
+    if (spaceEnemy(c, e, time)) return;
     if (frontierEnemy(c, e, time, false)) return;
     if (!["slime", "crawler", "manta"].includes(e.kind)) {
       drawCreature(c, e, time);
@@ -994,18 +996,21 @@ export class Art {
     enemyMarks(c, e);
   }
   world(c: CanvasRenderingContext2D, w: World, low = false) {
-    if (!frontierBackground(c, w, low))
+    if (!spaceBackground(c, w, low) && !frontierBackground(c, w, low))
       this.background(c, w.region, w.camera, w.time, low);
-    if(w.region==='crash'&&w.colony.state.enabled&&w.colony.night){c.fillStyle='#08172a55';c.fillRect(0,0,1280,720);}
+    if (w.region === "crash" && w.colony.state.enabled && w.colony.night) {
+      c.fillStyle = "#08172a55";
+      c.fillRect(0, 0, 1280, 720);
+    }
     c.save();
     c.translate(
       -w.camera.x + (Math.random() - 0.5) * w.camera.shake * w.settings.shake,
       -w.camera.y + (Math.random() - 0.5) * w.camera.shake * w.settings.shake,
     );
-    this.terrain(c, w);
+    if (!spaceTerrain(c, w)) this.terrain(c, w);
     this.landmarks(c, w);
     frontierStructures(c, w);
-    drawColony(c,w);
+    drawColony(c, w);
     drawCombat(c, w);
     drawTitan(c, w);
     for (const l of w.map.landmarks)
@@ -1108,7 +1113,8 @@ export class Art {
       );
     }
     if (["crash", "forest"].includes(w.region)) {
-      const x = w.region==="crash"&&w.colony.unlocked?3050:w.map.width-130;
+      const x =
+        w.region === "crash" && w.colony.unlocked ? 3050 : w.map.width - 130;
       line(c, [x, 690, x, 775], "#9bccc4", 2);
       poly(
         c,

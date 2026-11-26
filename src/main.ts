@@ -1,3 +1,4 @@
+import { spaceAction } from "./ui/space-ui";
 import {
   colonyAction,
   builderPanel,
@@ -177,6 +178,23 @@ window.addEventListener(
   { passive: false },
 );
 ui.action = (action, value) => {
+  if (
+    world?.space.state.trip &&
+    ![
+      "sp-skip",
+      "sp-tab",
+      "close",
+      "pause",
+      "save",
+      "title",
+      "settings",
+    ].includes(action)
+  )
+    return;
+  if (world && spaceAction(world, action, value)) {
+    ui.open("space", world, settings);
+    return;
+  }
   audio.start();
   audio.play("ui");
   if (
@@ -387,6 +405,10 @@ ui.setting = (key, value) => {
 input.onMenu = (key) => {
   audio.start();
   if (mode !== "game" || !world || world.dead > 0) return;
+  if (key === "KeyU") {
+    openModal("space");
+    return;
+  }
   if (key === "KeyB") {
     ui.action(world.colony.buildMode ? "cb-exit" : "cb-build");
     return;
@@ -497,6 +519,7 @@ class ExpeditionScene extends Phaser.Scene {
       if (world.colony.buildMode) {
         world.colony.tick(dt);
         world.survival.production.tick(dt);
+        world.space.tick(dt);
         const c = world.colony,
           v = c.view,
           speed = (650 * dt) / v.zoom;
@@ -550,9 +573,19 @@ class ExpeditionScene extends Phaser.Scene {
         const queue = ui.dialog.querySelector("#production-queue");
         if (queue) queue.innerHTML = productionQueue(world);
       }
+      if (ui.modal === "space") {
+        const flight = ui.dialog.querySelector("#flight-time");
+        if (flight) {
+          if (world.space.state.trip)
+            flight.textContent =
+              Math.ceil(world.space.state.trip.remaining) + "초";
+          else ui.open("space", world, settings);
+        }
+      }
       for (const event of world.events.splice(0)) {
         if (event.type === "facility") {
-          if (event.text === "colony") openModal("colony");
+          if (event.text === "space") openModal("space");
+          else if (event.text === "colony") openModal("colony");
           else {
             ui.hubTab = facilityTab(event.text);
             openModal("hub");
@@ -567,9 +600,11 @@ class ExpeditionScene extends Phaser.Scene {
         }
       }
       audio.region(
-        world.combat.boss.active || world.survival.sentinel.active
-          ? "boss" + world.combat.boss.phase
-          : world.region,
+        world.space.combat.boss
+          ? "colossus"
+          : world.combat.boss.active || world.survival.sentinel.active
+            ? "boss" + world.combat.boss.phase
+            : world.region,
       );
       if (world.colony.buildMode) builderArt(c, world);
       else art.world(c, world, settings.effects === "low");

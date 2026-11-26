@@ -8,7 +8,6 @@ import {
   definition,
   buildings,
   colonyTech,
-  deposits,
   shipParts,
   partNames,
   BASE_END,
@@ -156,7 +155,9 @@ export class ColonySystem {
         warehouse: "warehouse",
       };
       for (const f of this.w.survival.state.facilities) {
-        const l = regions.crash.landmarks.find((l) => l.facility === f);
+        const l = regions[this.w.baseRegion].landmarks.find(
+          (l) => l.facility === f,
+        );
         if (l)
           this.state.buildings.push(this.make(kinds[f], l.x - 80, 780, true));
       }
@@ -235,7 +236,7 @@ export class ColonySystem {
   placement(kind: BuildingKind, x: number, y: number) {
     const d = definition(kind);
     if (!this.unlocked) return "개척 기술 연구와 건설 설계도가 필요합니다.";
-    if (this.w.region !== "crash" || this.w.dead > 0 || this.siege)
+    if (!this.w.isColonyRegion || this.w.dead > 0 || this.siege)
       return "기지의 평온한 상태에서 건설할 수 있습니다.";
     if (d.tech && !this.state.technologies.includes(d.tech))
       return `${colonyTech[d.tech].name} 연구 필요`;
@@ -262,14 +263,14 @@ export class ColonySystem {
     )
       return "다른 시설과 겹칩니다.";
     if (
-      regions.crash.landmarks.some(
+      regions[this.w.baseRegion].landmarks.some(
         (l) =>
           x < l.x + 55 && x + d.w > l.x - 55 && y > l.y - 110 && y - d.h < l.y,
       )
     )
       return "스토리 시설·출입 경로 보호 구역";
     if (
-      regions.crash.resources.some(
+      regions[this.w.baseRegion].resources.some(
         (n) =>
           x < n.x + 35 && x + d.w > n.x - 35 && y > n.y - 80 && y - d.h < n.y,
       )
@@ -277,7 +278,10 @@ export class ColonySystem {
       return "수동 채집 자원 보호 구역";
     if (y !== GROUND) {
       const feet = kind === "floor" ? y + 160 : y;
-      const supports = [...regions.crash.platforms, ...this.expanded];
+      const supports = [
+        ...regions[this.w.baseRegion].platforms,
+        ...this.expanded,
+      ];
       if (
         !supports.some(
           (p) => Math.abs(p.y - feet) < 1 && x >= p.x && x + d.w <= p.x + p.w,
@@ -288,8 +292,8 @@ export class ColonySystem {
           : "바닥 또는 완성된 발판 위에 배치하세요.";
     }
     if (
-      kind.startsWith("miner") &&
-      !deposits.some(
+      (kind.startsWith("miner") || kind === "desertMine") &&
+      !this.w.deposits.some(
         (p) =>
           Math.abs(p.x - (x + d.w / 2)) <= 100 &&
           y === GROUND &&
@@ -425,6 +429,7 @@ export class ColonySystem {
     }
   }
   facilityPowered(f: Facility) {
+    if(this.w.region==='ship' && f==='workbench')return true;
     if (!this.state.enabled || f === "terminal" || f === "warehouse")
       return true;
     const kind = f === "research" ? "lab" : f;
@@ -458,8 +463,8 @@ export class ColonySystem {
         1 +
         (b.level - 1) * 0.3 +
         (this.state.technologies.includes("automation") ? 0.1 : 0);
-      if (b.kind.startsWith("miner")) {
-        const d = deposits.find((d) => Math.abs(d.x - center(b)) <= 100);
+      if (b.kind.startsWith("miner") || b.kind === "desertMine") {
+        const d = this.w.deposits.find((d) => Math.abs(d.x - center(b)) <= 100);
         if (d)
           add(
             d.item,
@@ -563,7 +568,8 @@ export class ColonySystem {
         const d = definition(b.kind);
         if (!d.generation) continue;
         let output = d.generation * (1 + (b.level - 1) * 0.35);
-        if (b.kind === "solar") output *= offline ? 0.6 : this.night ? 0 : 1;
+        if (["solar", "highSolar"].includes(b.kind))
+          output *= offline ? 0.6 : this.night ? 0 : 1;
         else {
           if (b.fuel <= 0 && dt > 0) {
             const item = b.kind === "crystalGen" ? "crystal" : "denseCell";
@@ -605,9 +611,13 @@ export class ColonySystem {
           reason: powered ? "작동 중" : "전력 부족 · 우선순위 대기",
           connected: false,
         });
-        if (d.generation && b.kind !== "solar" && b.fuel <= 0)
+        if (
+          d.generation &&
+          !["solar", "highSolar"].includes(b.kind) &&
+          b.fuel <= 0
+        )
           this.statuses.get(b.id)!.reason = "발전 연료 부족";
-        if (b.kind === "solar" && this.night && !offline)
+        if (["solar", "highSolar"].includes(b.kind) && this.night && !offline)
           this.statuses.get(b.id)!.reason = "야간 · 발전 정지";
       }
       let balance = (generation - used) * dt;
@@ -784,7 +794,11 @@ export class ColonySystem {
     const status = this.statuses.get(b.id)!;
     if (!status.powered || !alive(b)) return;
     if (!status.connected) {
-      if (b.kind.startsWith("miner") || this.recipeList(b).length)
+      if (
+        b.kind.startsWith("miner") ||
+        b.kind === "desertMine" ||
+        this.recipeList(b).length
+      )
         status.reason = "물류 미연결 · 창고 반경 480 / 중앙 물류 관리소";
       return;
     }
@@ -803,8 +817,8 @@ export class ColonySystem {
         (r) => r.target === b.id && r.state === "Working" && r.role === "miner",
       ).length *
         0.1;
-    if (b.kind.startsWith("miner")) {
-      const p = deposits.find((p) => Math.abs(p.x - center(b)) <= 100);
+    if (b.kind.startsWith("miner") || b.kind === "desertMine") {
+      const p = this.w.deposits.find((p) => Math.abs(p.x - center(b)) <= 100);
       if (!p) {
         status.reason = "매장지 없음";
         return;
@@ -877,7 +891,9 @@ export class ColonySystem {
           b.age = 0;
           this.invalidate();
           this.w.count("build_" + b.kind);
-          if (b.kind.startsWith("miner")) this.once("depositSurvey");
+          if (this.w.planetId === "ares") this.w.count("ares_build_" + b.kind);
+          if (b.kind.startsWith("miner") || b.kind === "desertMine")
+            this.once("depositSurvey");
           if (!offline) {
             this.w.toast(definition(b.kind).name + " 건설 완료");
             this.w.sound("constructionComplete");
@@ -929,13 +945,13 @@ export class ColonySystem {
     if (!offline) {
       this.soundClock -= dt;
       this.turretSound = Math.max(0, this.turretSound - dt);
-      if (this.soundClock <= 0 && this.w.region === "crash") {
+      if (this.soundClock <= 0 && this.w.isColonyRegion) {
         this.soundClock = 4;
         const nearby = this.state.buildings.find(
           (b) =>
             this.statuses.get(b.id)?.powered &&
             Math.abs(center(b) - this.w.player.x) < 400 &&
-            (b.job || b.kind.startsWith("miner")),
+            (b.job || b.kind.startsWith("miner") || b.kind === "desertMine"),
         );
         if (nearby) this.w.sound("machine");
       }
@@ -1098,7 +1114,8 @@ export class ColonySystem {
         r.role === "miner"
           ? this.state.buildings.find(
               (b) =>
-                b.kind.startsWith("miner") && this.statuses.get(b.id)?.powered,
+                (b.kind.startsWith("miner") || b.kind === "desertMine") &&
+                this.statuses.get(b.id)?.powered,
             )
           : r.role === "repair"
             ? this.state.buildings.find(
@@ -1134,7 +1151,7 @@ export class ColonySystem {
     }
   }
   private health(dt: number) {
-    if (this.w.region !== "crash") return;
+    if (!this.w.isColonyRegion) return;
     for (const b of this.state.buildings) {
       if (
         !this.statuses.get(b.id)?.powered ||
@@ -1165,7 +1182,7 @@ export class ColonySystem {
   startSiege() {
     if (
       this.siege ||
-      this.w.region !== "crash" ||
+      !this.w.isColonyRegion ||
       this.w.dead > 0 ||
       this.buildMode ||
       !!this.w.combat.training
@@ -1198,7 +1215,7 @@ export class ColonySystem {
   }
   private defense(dt: number) {
     if (!this.siege) return;
-    if (this.w.region !== "crash" || this.w.dead > 0) {
+    if (!this.w.isColonyRegion || this.w.dead > 0) {
       this.abortSiege();
       return;
     }

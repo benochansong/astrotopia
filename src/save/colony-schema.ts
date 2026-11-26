@@ -37,7 +37,7 @@ export const savedColonyCapacity = (s: ColonySave) =>
 export function validColony(s: unknown): s is ColonySave {
   if (
     !obj(s) ||
-    s.id !== "eden-sector-01" ||
+    !["eden-sector-01", "ares-sector-01"].includes(s.id) ||
     typeof s.name !== "string" ||
     s.name.length > 40 ||
     !int(s.serial) ||

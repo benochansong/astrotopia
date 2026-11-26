@@ -289,7 +289,7 @@ export function colonyAction(
     case "refresh":
       break;
     case "build":
-      if (!c.unlocked || w.region !== "crash" || w.dead || c.siege) {
+      if (!c.unlocked || !w.isColonyRegion || w.dead || c.siege) {
         w.toast(
           "설계도 확보 후 기지에서 건설할 수 있습니다. 침공 중에는 건설 모드가 제한됩니다.",
         );
@@ -351,7 +351,7 @@ export function colonyAction(
         w.toast("침공 중에는 이동할 수 없습니다.");
         return true;
       }
-      w.enterRegion("crash", 3400);
+      w.enterRegion(w.baseRegion, 3400);
       ui.close();
       return true;
     case "locate": {

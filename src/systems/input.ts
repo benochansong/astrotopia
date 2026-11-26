@@ -37,6 +37,7 @@ export class Input {
               "KeyN",
               "KeyL",
               "KeyO",
+              "KeyU",
             ].includes(e.code)
           )
             this.onMenu(e.code);

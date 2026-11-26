@@ -86,8 +86,8 @@ export function validBattle(b: unknown): b is BattleSave {
   )
     return false;
   if (
-    b.titles.length > 1 ||
-    b.titles.some((s: string) => s !== "개척자") ||
+    b.titles.length > 2 ||
+    b.titles.some((s: string) => !["개척자","사막의 개척자"].includes(s)) ||
     b.story.length > 3 ||
     b.story.some(
       (s: string) => !["titanCore", "coreAnalysis", "engine"].includes(s),
@@ -95,7 +95,7 @@ export function validBattle(b: unknown): b is BattleSave {
   )
     return false;
   if (
-    b.discovered.length > 24 ||
+    b.discovered.length > 100 ||
     b.discovered.some((s: string) => !Object.hasOwn(enemyData, s))
   )
     return false;
@@ -107,7 +107,7 @@ export function validBattle(b: unknown): b is BattleSave {
         typeof l.id !== "string" ||
         !/^loot-\d+$/.test(l.id) ||
         !regionOrder.includes(l.region) ||
-        !number(l.x, 5200) ||
+        !number(l.x, 10000) ||
         !number(l.y, 1100) ||
         !number(l.count, 99) ||
         l.count < 1 ||

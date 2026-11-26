@@ -1,3 +1,6 @@
+import { SpaceSystem } from "../space/SpaceSystem";
+import { baseForPlanet, aresDeposits } from "../space/catalog";
+import { deposits } from "../colony/catalog";
 import { ColonySystem } from "../colony/ColonySystem";
 import { BASE_END } from "../colony/catalog";
 import { environments, regionEnvironment } from "../survival/catalog";
@@ -5,7 +8,6 @@ import { SurvivalSystem } from "../survival/SurvivalSystem";
 import {
   enemyData,
   items,
-  planets,
   questData,
   regionOrder,
   regions,
@@ -75,6 +77,22 @@ export class World {
   combat = new CombatSystem(this);
   survival = new SurvivalSystem(this);
   colony = new ColonySystem(this);
+  space = new SpaceSystem(this);
+  get planetId() {
+    return this.space.planet;
+  }
+  get baseRegion() {
+    return baseForPlanet(this.planetId);
+  }
+  get isColonyRegion() {
+    return this.region === this.baseRegion;
+  }
+  get deposits() {
+    return this.planetId === "ares" ? aresDeposits : deposits;
+  }
+  get levelCap() {
+    return this.space.state.launched ? 30 : 15;
+  }
   get stats() {
     const stats = EquipmentSystem.stats(this.player.level, this.battle);
     stats.defense += this.survival.resistance.defense;
@@ -164,6 +182,7 @@ export class World {
     this.combat.unlock();
     this.colony.initialize();
     this.colony.offline();
+    this.space.initialize(save?.space);
     if (!this.colony.state.enabled) this.survival.production.offline();
     if (!["crash", "forest", "valley"].includes(this.region)) {
       this.player.x = this.map.spawn;
@@ -175,22 +194,25 @@ export class World {
   }
   get map() {
     const map = regions[this.region];
-    if (this.region === "crash" && this.colony.unlocked)
+    if (this.isColonyRegion && this.colony.unlocked)
       return {
         ...map,
         width: BASE_END + 240,
         platforms: [...map.platforms, ...this.colony.platforms],
-        landmarks: [
-          ...map.landmarks,
-          {
-            id: "colony-forest",
-            kind: "portal" as const,
-            x: 3100,
-            y: 780,
-            label: "발광 숲으로 이동",
-            target: "forest" as const,
-          },
-        ],
+        landmarks:
+          this.planetId === "ares"
+            ? map.landmarks
+            : [
+                ...map.landmarks,
+                {
+                  id: "colony-forest",
+                  kind: "portal" as const,
+                  x: 3100,
+                  y: 780,
+                  label: "발광 숲으로 이동",
+                  target: "forest" as const,
+                },
+              ],
       };
     return map;
   }
@@ -248,9 +270,9 @@ export class World {
   }
   addXp(amount: number) {
     const p = this.player;
-    if (p.level >= 15) return;
+    if (p.level >= this.levelCap) return;
     p.xp += amount;
-    while (p.level < 15 && p.xp >= xpRequired(p.level)) {
+    while (p.level < this.levelCap && p.xp >= xpRequired(p.level)) {
       p.xp -= xpRequired(p.level);
       p.level++;
       this.combat.unlock();
@@ -260,7 +282,7 @@ export class World {
       this.sound("level");
       this.emit("save", "level");
     }
-    if (p.level === 15) p.xp = 0;
+    if (p.level === this.levelCap) p.xp = 0;
   }
   collect(item: ItemId, count: number) {
     const next = { ...this.inventory };
@@ -344,6 +366,7 @@ export class World {
   enterRegion(id: RegionId, x?: number) {
     this.combat.reset();
     this.survival.sentinel.abort();
+    this.space.combat.abort();
     this.survival.environment.grace = 8;
     this.region = id;
     const p = this.player;
@@ -424,7 +447,7 @@ export class World {
       .sort((a, b) => Math.abs(a.x - cx) - Math.abs(b.x - cx))[0];
   }
   interact() {
-    if (this.region === "crash" && this.colony.state.enabled) {
+    if (this.isColonyRegion && this.colony.state.enabled) {
       const b = this.colony.state.buildings.find(
         (b) =>
           !b.legacy &&
@@ -449,6 +472,7 @@ export class World {
       return;
     }
     const l = target.landmark;
+    if (this.space.interact(l)) return;
     if (this.survival.interact(l)) return;
     if (l.kind === "training") {
       this.combat.startTraining();
@@ -548,6 +572,8 @@ export class World {
     this.time += dt;
     this.colony.tick(dt);
     this.survival.production.tick(dt);
+    this.space.tick(dt, input);
+    if (this.space.state.trip) return;
     this.transition = Math.max(0, this.transition - dt);
     this.regionNotice = Math.max(0, this.regionNotice - dt);
     this.camera.shake = Math.max(0, this.camera.shake - dt * 25);
@@ -605,7 +631,7 @@ export class World {
         },
         step,
         this.map.platforms,
-        planets[0].gravity,
+        this.space.gravity,
         {
           speed: this.stats.moveSpeed * this.combat.weapons.movement(input),
           energy: this.stats.energy,
@@ -700,7 +726,8 @@ export class World {
   }
   snapshot(settings: Settings): SaveData {
     return {
-      version: 4,
+      version: 5,
+      space: this.space.snapshot(),
       colony: structuredClone(this.colony.state),
       survival: {
         ...structuredClone(this.survival.state),

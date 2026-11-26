@@ -17,6 +17,8 @@ export class ProductionQueueSystem {
     const w = this.w,
       s = w.survival.state,
       d = kind === "craft" ? recipes[id] : technologies[id];
+    if (id === "space_replicaCore" && !w.battle.bossKills)
+      return "EDEN TITAN 코어 분석 기록 필요";
     if (!d) return "알 수 없는 작업";
     if (!w.survival.inBase)
       return "불시착 기지의 작업 시설 근처에서 시작하세요.";
@@ -121,7 +123,12 @@ export class ProductionQueueSystem {
       )
         continue;
       lanes.add(lane);
-      j.remaining = Math.max(0, j.remaining - Math.max(0, dt) * this.w.colony.facilitySpeed(lane as import("./catalog").Facility));
+      j.remaining = Math.max(
+        0,
+        j.remaining -
+          Math.max(0, dt) *
+            this.w.colony.facilitySpeed(lane as import("./catalog").Facility),
+      );
       if (j.remaining === 0) {
         j.state = "ready";
         changed = true;

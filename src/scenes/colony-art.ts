@@ -1,12 +1,6 @@
 import type { World } from "../core/world";
 import type { Building } from "../colony/types";
-import {
-  definition,
-  deposits,
-  GRID,
-  GROUND,
-  BASE_END,
-} from "../colony/catalog";
+import { definition, GRID, GROUND, BASE_END } from "../colony/catalog";
 import { items } from "../data/content";
 const line = (
   c: CanvasRenderingContext2D,
@@ -333,9 +327,9 @@ export function drawColony(
   w: World,
   builder = false,
 ) {
-  if (w.region !== "crash" || !w.colony.state.enabled) return;
+  if (!w.isColonyRegion || !w.colony.state.enabled) return;
   const col = w.colony;
-  for (const p of deposits) {
+  for (const p of w.deposits) {
     rect(c, p.x - 110, GROUND + 8, 220, 32, items[p.item].color + "55");
     for (let i = 0; i < 8; i++)
       circle(

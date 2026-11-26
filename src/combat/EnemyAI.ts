@@ -48,7 +48,9 @@ export class EnemyAI {
     const w = this.w,
       p = w.player;
     for (const e of [...w.enemies]) {
-      if (["dummy", "sentinel", "conduit"].includes(e.kind)) continue;
+      if (w.space.combat.enemy(e, dt)) continue;
+      if (["colossus", "dummy", "sentinel", "conduit"].includes(e.kind))
+        continue;
       e.timer -= dt;
       e.staggerGuard = Math.max(0, (e.staggerGuard ?? 0) - dt);
       e.flash = Math.max(0, e.flash - dt);

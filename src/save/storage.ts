@@ -1,3 +1,5 @@
+import { newSpace } from "../space/types";
+import { validSpace } from "./space-schema";
 import { newColony } from "../colony/types";
 import { validColony, savedColonyCapacity } from "./colony-schema";
 import { newSurvival } from "../survival/types";
@@ -47,15 +49,15 @@ export function parseSave(raw: string | null): SaveData | null {
     const s = JSON.parse(raw);
     if (
       !object(s) ||
-      ![1, 2, 3, 4].includes(Number(s.version)) ||
+      ![1, 2, 3, 4, 5].includes(Number(s.version)) ||
       !regionOrder.includes(s.region as never) ||
       !finite(s.savedAt, 0, 1e15) ||
-      !finite(s.level, 1, 15) ||
+      !finite(s.level, 1, s.version === 5 ? 30 : 15) ||
       !Number.isInteger(s.level)
     )
       return null;
     if (
-      !finite(s.x, 0, s.version === 4 ? 10000 : 5200) ||
+      !finite(s.x, 0, Number(s.version) >= 4 ? 10000 : 5200) ||
       !finite(s.y, -100, 1000) ||
       !finite(s.xp, 0, xpRequired(s.level)) ||
       !finite(s.hp, 0, 1000) ||
@@ -86,12 +88,20 @@ export function parseSave(raw: string | null): SaveData | null {
       !finite(
         p.quest,
         0,
-        s.version === 1 ? 4 : s.version === 2 ? 10 : s.version === 3 ? 18 : 28,
+        s.version === 1
+          ? 4
+          : s.version === 2
+            ? 10
+            : s.version === 3
+              ? 18
+              : s.version === 4
+                ? 28
+                : 38,
       ) ||
       !Number.isInteger(p.quest) ||
       !Array.isArray(p.discovered) ||
       p.discovered.some((r) => !regionOrder.includes(r)) ||
-      p.discovered.length > 7
+      p.discovered.length > regionOrder.length
     )
       return null;
     const landmarkIds = [
@@ -142,6 +152,11 @@ export function parseSave(raw: string | null): SaveData | null {
       s.x = 3820;
       s.y = 716;
     }
+    if (s.version === 4) {
+      s.space = newSpace();
+      s.version = 5;
+    }
+    if (!validSpace(s.space, s.survival, String(s.region))) return null;
     return s as unknown as SaveData;
   } catch {
     return null;
@@ -183,7 +198,7 @@ export class SaveStore {
       if (previous) {
         try {
           if (
-            [2, 3].includes(JSON.parse(previous).version) &&
+            [2, 3, 4].includes(JSON.parse(previous).version) &&
             !this.storage.getItem(
               SAVE_KEY + ".backup.v" + JSON.parse(previous).version,
             )

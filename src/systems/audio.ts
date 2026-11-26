@@ -52,13 +52,20 @@ export class AudioSystem {
       this.context.currentTime,
       2,
     );
-    const root = id.startsWith("boss")
-      ? 41.2 + Number(id.slice(4)) * 3
-      : id === "valley"
-        ? 73.416
-        : id === "forest"
-          ? 58.27
-          : 65.406;
+    const root =
+      id === "colossus"
+        ? 36.7
+        : id === "ship"
+          ? 82.4
+          : id.startsWith("ares")
+            ? 55
+            : id.startsWith("boss")
+              ? 41.2 + Number(id.slice(4)) * 3
+              : id === "valley"
+                ? 73.416
+                : id === "forest"
+                  ? 58.27
+                  : 65.406;
     this.voices.forEach((voice, i) =>
       voice.frequency.setTargetAtTime(
         root * [1, 1.5, 2, 2.52, 3][i],
@@ -92,6 +99,7 @@ export class AudioSystem {
       environmentWarning: [390, 260, 0.4, "sine"],
       craftComplete: [523, 1046, 0.6, "triangle"],
       researchComplete: [440, 1760, 0.8, "sine"],
+      launch: [55, 660, 1.8, "sawtooth"],
       pulse: [700, 140, 0.12, "triangle"],
       rifle: [180, 60, 0.065, "square"],
       blade: [1700, 90, 0.22, "sawtooth"],

@@ -1,7 +1,16 @@
 import type { World } from "../core/world";
 import { technologies } from "./catalog";
 export class TechnologyTreeSystem {
-  static branches = ["채굴", "소재", "생존", "무기", "개척"];
+  static branches = [
+    "채굴",
+    "소재",
+    "생존",
+    "무기",
+    "개척",
+    "우주",
+    "탐사",
+    "물류",
+  ];
   static nodes(branch: string) {
     return Object.values(technologies).filter((t) => t.branch === branch);
   }

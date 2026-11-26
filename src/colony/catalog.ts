@@ -86,6 +86,36 @@ const d = (
   ...extra,
 });
 export const buildings = {
+  dustShield: d(
+    "방진 보호막",
+    "habitat",
+    { ironBar: 3, polymer: 2 },
+    8,
+    "주변 260px 모래폭풍 바람과 시야 제한 차단",
+  ),
+  thermalRegulator: d(
+    "온도 조절 장치",
+    "habitat",
+    { copperBar: 3, heatAlloy: 2 },
+    10,
+    "주변 260px 체온 회복",
+  ),
+  highSolar: d(
+    "고효율 태양광 발전기",
+    "energy",
+    { cobaltAlloy: 2, wafer: 3 },
+    0,
+    "낮 45 EU 발전",
+    { generation: 45, range: 400 },
+  ),
+  desertMine: d(
+    "사막 채굴기",
+    "industry",
+    { cobaltAlloy: 2, ironBar: 4 },
+    10,
+    "현지 광맥을 자동 채굴합니다.",
+    { tech: "mining" },
+  ),
   terminal: d(
     "생존 터미널",
     "habitat",

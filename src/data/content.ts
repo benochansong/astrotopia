@@ -1,3 +1,10 @@
+import {
+  spaceItems,
+  spaceQuests,
+  type SpaceItem,
+  type SpaceRegion,
+} from "../space/catalog";
+import { spaceRegions, spaceEnemies, type SpaceEnemy } from "../space/regions";
 import { colonyItems, colonyQuests, type PartId } from "../colony/catalog";
 import { extraItems, type NewItemId } from "../survival/catalog";
 import {
@@ -8,8 +15,10 @@ import {
   type FrontierEnemy,
 } from "../survival/regions";
 import type { Element, EliteAffix } from "../combat/types";
-export type RegionId = FrontierRegion | "crash" | "forest" | "valley";
+export type RegionId =
+  SpaceRegion | FrontierRegion | "crash" | "forest" | "valley";
 export type ItemId =
+  | SpaceItem
   | PartId
   | NewItemId
   | "iron"
@@ -25,6 +34,7 @@ export type ItemId =
   | "ancientCrystal"
   | "titanCore";
 export type EnemyKind =
+  | SpaceEnemy
   | FrontierEnemy
   | "slime"
   | "crawler"
@@ -127,11 +137,11 @@ export const planets: Planet[] = [
     implemented: true,
   },
   ...[
-    ["ares", "ARES", "붉은 사막", 1.1],
-    ["frostia", "FROSTIA", "얼음", 0.8],
-    ["inferno", "INFERNO", "화산", 1.2],
+    ["ares", "ARES", "붉은 사막", 0.65],
+    ["frostia", "FROSTIA", "얼음", 1.2],
+    ["inferno", "INFERNO", "화산", 1.5],
     ["aquaria", "AQUARIA", "해양", 1],
-    ["lunaris", "LUNARIS", "저중력", 0.3],
+    ["lunaris", "LUNARIS", "저중력", 0.2],
     ["omega", "OMEGA", "고대 문명", 1],
   ].map(([id, name, biome, gravity]) => ({
     id: String(id),
@@ -160,6 +170,7 @@ export const items: Record<
     icon: string;
   }
 > = {
+  ...spaceItems,
   ...extraItems,
   ...colonyItems,
   fragment: {
@@ -263,6 +274,7 @@ export interface EnemyData {
   flying?: boolean;
 }
 export const enemyData: Record<EnemyKind, EnemyData> = {
+  ...spaceEnemies,
   ...frontierEnemies,
   spore: {
     name: "SPORE WALKER",
@@ -436,6 +448,7 @@ const node = (
   count = 1,
 ): Resource => ({ id, item, x, y, count, respawn: 35 });
 export const regions: Record<RegionId, Region> = {
+  ...spaceRegions,
   ...frontierRegions,
   crash: {
     id: "crash",
@@ -599,6 +612,7 @@ export const regions: Record<RegionId, Region> = {
   },
 };
 export const regionOrder: RegionId[] = [
+  // EDEN boundaries retain their first three indices.
   "crash",
   "forest",
   "valley",
@@ -606,6 +620,11 @@ export const regionOrder: RegionId[] = [
   "caverns",
   "ruins",
   "abyss",
+  "ship",
+  "aresLanding",
+  "aresDunes",
+  "aresCanyon",
+  "aresFoundry",
 ];
 export const questData = [
   {
@@ -711,6 +730,7 @@ export const questData = [
   },
   ...frontierQuests,
   ...colonyQuests,
+  ...spaceQuests,
 ] as const;
 export const opening = [
   [

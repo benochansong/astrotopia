@@ -8,6 +8,8 @@ export class EnvironmentSystem {
   last = "safe";
   constructor(private w: World) {}
   get kind() {
+    if (this.w.planetId === "ares" && this.w.space.protectedBy("oxygen"))
+      return "safe";
     return regionEnvironment(this.w.region, this.w.player.x, this.w.player.y);
   }
   get data() {

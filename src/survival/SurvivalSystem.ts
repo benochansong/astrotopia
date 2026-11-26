@@ -52,7 +52,7 @@ export class SurvivalSystem {
   }
   get inBase() {
     return (
-      this.w.region === "crash" &&
+      (this.w.isColonyRegion || this.w.region === "ship") &&
       (this.w.player.x < 2000 || this.w.colony.unlocked) &&
       !this.w.combat.training &&
       this.w.dead <= 0
@@ -127,7 +127,7 @@ export class SurvivalSystem {
       this.w.player.energy = this.w.stats.energy;
       this.state.oxygen = this.oxygen.maximum;
       this.state.exposure = { toxic: 0, radiation: 0, unstable: 0 };
-      this.w.progress.checkpoint = { region: "crash", x: 300 };
+      this.w.progress.checkpoint = { region: this.w.baseRegion, x: 300 };
       if (!this.state.scanner) {
         this.state.scanner = true;
         this.state.warehouse.data = 4;
@@ -236,7 +236,7 @@ export class SurvivalSystem {
         return false;
       }
       w.inventory[id]!--;
-      w.enterRegion("crash", 300);
+      w.enterRegion(w.baseRegion, 300);
       s.oxygen = this.oxygen.maximum;
       this.environment.grace = 10;
       this.useCooldown = 3;

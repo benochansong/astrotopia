@@ -57,7 +57,8 @@ export interface Progress {
   checkpoint: { region: RegionId; x: number };
 }
 export interface SaveData {
-  version: 4;
+  version: 4 | 5;
+  space?: import("../space/types").SpaceSave;
   colony: import("../colony/types").ColonySave;
   survival: import("../survival/types").SurvivalSave;
   battle: BattleSave;

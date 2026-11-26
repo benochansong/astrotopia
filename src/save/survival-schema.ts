@@ -22,15 +22,15 @@ export function validSurvival(
 ): s is SurvivalSave {
   if (
     !obj(s) ||
-    !num(s.oxygen, 300) ||
+    !num(s.oxygen, 500) ||
     !obj(s.exposure) ||
     Object.keys(s.exposure).length !== 3 ||
     !["toxic", "radiation", "unstable"].every((k) => num(s.exposure[k], 100))
   )
     return false;
   if (
-    !array(s.owned, (id) => Object.hasOwn(environmentGear, id), 6) ||
-    !array(s.equipped, (id) => s.owned.includes(id), 5)
+    !array(s.owned, (id) => Object.hasOwn(environmentGear, id), 40) ||
+    !array(s.equipped, (id) => s.owned.includes(id), 8)
   )
     return false;
   if (
@@ -48,7 +48,7 @@ export function validSurvival(
   )
     return false;
   if (
-    !array(s.technologies, (id) => Object.hasOwn(technologies, id), 25) ||
+    !array(s.technologies, (id) => Object.hasOwn(technologies, id), 100) ||
     !num(s.researchPoints) ||
     !Number.isInteger(s.researchPoints) ||
     !array(s.facilities, (id) => Object.hasOwn(facilities, id), 6)

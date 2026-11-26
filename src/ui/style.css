@@ -2515,3 +2515,90 @@ progress::-webkit-progress-value {
   color: #f1c096;
   font-size: 13px;
 }
+
+.space-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.space-grid article,
+.space-status {
+  padding: 18px;
+  background: #162a38;
+  border: 1px solid #b59c7040;
+  border-radius: 10px;
+}
+.space-grid small {
+  display: block;
+}
+.space-grid button,
+.space-status button,
+.cargo-row button {
+  margin: 5px;
+}
+.stellar-map {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  min-height: 225px;
+  background: radial-gradient(ellipse at left, #9d784533, #071323 65%);
+  border-radius: 16px;
+}
+.star-node {
+  display: grid;
+  gap: 8px;
+  text-align: center;
+  width: 12%;
+}
+.star-node small {
+  font-size: 10px;
+}
+.planet-disc {
+  height: 48px;
+  width: 48px;
+  border-radius: 50%;
+  margin: auto;
+  background: radial-gradient(
+    circle at 30% 28%,
+    #eee,
+    var(--planet) 40%,
+    #111 95%
+  );
+  box-shadow: 0 0 30px #ffffff15;
+}
+.cargo-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+}
+.flight-panel {
+  text-align: center;
+  padding: 70px;
+  background: radial-gradient(ellipse, #314454, #081523);
+}
+
+.space-environment {
+  position: absolute;
+  top: 280px;
+  left: 30px;
+  color: #eed2a3;
+  font-size: 12px;
+  background: #111d2de0;
+  padding: 10px;
+  border-radius: 8px;
+}
+.space-boss {
+  position: absolute;
+  top: 25px;
+  left: 400px;
+  width: 420px;
+  display: grid;
+  text-align: center;
+  gap: 5px;
+  color: #f2c18d;
+}
+.space-boss progress {
+  width: 100%;
+  accent-color: #dba478;
+}

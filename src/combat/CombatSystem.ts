@@ -134,6 +134,7 @@ export class CombatSystem {
           strong &&
           e.kind !== "sentinel" &&
           e.kind !== "conduit" &&
+          e.kind !== "colossus" &&
           e.kind !== "titan" &&
           e.kind !== "dummy" &&
           e.launched < 2
@@ -152,7 +153,8 @@ export class CombatSystem {
       e,
       a,
       Math.random(),
-      e.kind === "titan" && this.boss.coreOpen,
+      (e.kind === "titan" && this.boss.coreOpen) ||
+        (e.kind === "colossus" && w.space.combat.core > 0),
     );
     let amount = result.damage;
     if (e.shield > 0) {

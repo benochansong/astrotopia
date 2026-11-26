@@ -1,3 +1,8 @@
+import {
+  desertGear,
+  installSpaceRecipes,
+  spaceTechRows,
+} from "../space/catalog";
 import type { GearTemplate } from "../data/battle";
 import type { ItemId, RegionId } from "../data/content";
 import type { WeaponId } from "../combat/types";
@@ -125,6 +130,7 @@ export const toolsData = [
   { id: 4, name: "양자 추출기", speed: 2.7, energy: 6, color: "#f4d699" },
 ] as const;
 export const environmentGear = {
+  ...desertGear,
   mask: {
     name: "정화 마스크",
     slot: "mask",
@@ -361,7 +367,10 @@ for (const [id, tech, cost] of [
     tech,
     5,
   );
-const envCosts: Record<EnvGearId, [string, Cost]> = {
+const envCosts: Record<
+  Exclude<EnvGearId, keyof typeof desertGear>,
+  [string, Cost]
+> = {
   mask: ["filter", { wovenFiber: 3, copperBar: 2, polymer: 1 }],
   oxygen: ["oxygen", { ironBar: 4, copperBar: 3, refinedCell: 2 }],
   light: ["oxygen", { copperBar: 2, wafer: 2, refinedCell: 1 }],
@@ -375,7 +384,7 @@ const envCosts: Record<EnvGearId, [string, Cost]> = {
     { alloy: 4, rareAlloy: 2, coreShard: 1, denseCell: 3 },
   ],
 };
-for (const id of Object.keys(envCosts) as EnvGearId[])
+for (const id of Object.keys(envCosts) as (keyof typeof envCosts)[])
   recipe(
     id,
     environmentGear[id].name,
@@ -599,6 +608,8 @@ export function regionEnvironment(
   x: number,
   y: number,
 ): EnvironmentKind {
+  if (id.startsWith("ares"))
+    return id === "aresLanding" && x < 650 ? "safe" : "hypoxia";
   if (x < 500) return "safe";
   if (id === "marsh") return y < 610 ? "safe" : "toxic";
   return id === "caverns"
@@ -638,3 +649,12 @@ recipe(
   4,
 );
 recipes.advanced.cost.coreCrystal = 3;
+
+installSpaceRecipes(recipes);
+for (const row of spaceTechRows)
+  technologies[row.id] = {
+    ...row,
+    requires: [...row.requires],
+    cost: { ...row.cost },
+    seconds: 12,
+  };

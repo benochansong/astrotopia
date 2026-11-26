@@ -328,6 +328,24 @@ export function newBattle(level = 1): BattleSave {
   };
 }
 export const subzones = {
+  ...(Object.fromEntries(
+    ["ship", "aresLanding", "aresDunes", "aresCanyon", "aresFoundry"].map(
+      (id) => [
+        id,
+        [
+          {
+            id,
+            start: 0,
+            name: id === "ship" ? "ASTRA-01" : "ARES 개척 구역",
+            level: "15–30",
+          },
+        ],
+      ],
+    ),
+  ) as Record<
+    import("../space/catalog").SpaceRegion,
+    { id: string; start: number; name: string; level: string }[]
+  >),
   marsh: [{ id: "marshZone", start: 0, name: "독성 습지", level: "10–15" }],
   caverns: [
     { id: "cavernsZone", start: 0, name: "심층 수정 동굴", level: "12–15" },

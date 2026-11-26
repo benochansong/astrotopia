@@ -1,3 +1,4 @@
+import {desertGear} from '../src/space/catalog';
 import { describe, it, expect } from "vitest";
 import { World } from "../src/core/world";
 import { emptyInput } from "../src/core/types";
@@ -40,7 +41,7 @@ describe("Survival Protocol", () => {
     old.version = 2;
     delete old.survival;
     const s = parseSave(JSON.stringify(old))!;
-    expect(s.version).toBe(4);
+    expect(s.version).toBe(5);
     expect(s.progress.quest).toBe(10);
     expect(s.battle).toEqual(w.battle);
     expect(s.inventory.iron).toBe(10);
@@ -188,7 +189,7 @@ describe("Survival Protocol", () => {
   it("crafts all six protection devices and replaces suit slots correctly", () => {
     const w = base();
     w.survival.state.technologies = Object.keys(technologies);
-    for (const id of Object.keys(environmentGear)) {
+    for (const id of Object.keys(environmentGear).filter(id=>!Object.hasOwn(desertGear,id))) {
       w.inventory = { ...recipes[id].cost };
       expect(w.survival.crafting.start(id)).toBe(true);
       complete(w);
@@ -298,7 +299,7 @@ describe("Survival Protocol", () => {
     expect(w.survival.state.sentinelKills).toBe(2);
   });
   it("has complete connected regions and eight sequential quest definitions", () => {
-    expect(questData).toHaveLength(28);
+    expect(questData).toHaveLength(38);
     for (const id of ["marsh", "caverns", "ruins", "abyss"] as const) {
       expect(regions[id].resources.length).toBeGreaterThan(3);
       expect(regions[id].landmarks.some((l) => l.kind === "portal")).toBe(true);

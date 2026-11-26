@@ -36,7 +36,7 @@ export function createEnemy(
     ccImmunity: 0,
     flash: 0,
     elite,
-    shield: elite === "shielded" ? hp * 0.3 : 0,
+    shield: elite === "shielded" || kind === "guardian" ? hp * 0.3 : 0,
     regenBudget: hp * 0.25,
     action: 0,
     launched: 0,
@@ -48,7 +48,7 @@ export class EnemyAI {
     const w = this.w,
       p = w.player;
     for (const e of [...w.enemies]) {
-      if (e.kind === "dummy") continue;
+      if (["dummy", "sentinel", "conduit"].includes(e.kind)) continue;
       e.timer -= dt;
       e.staggerGuard = Math.max(0, (e.staggerGuard ?? 0) - dt);
       e.flash = Math.max(0, e.flash - dt);
@@ -72,6 +72,16 @@ export class EnemyAI {
       const d = enemyData[e.kind],
         size = enemySize(e),
         distance = Math.hypot(p.x - e.x, p.y - e.y);
+      if (
+        e.kind === "lurker" &&
+        distance > 160 &&
+        !w.survival.scanner.remaining &&
+        !w.survival.state.equipped.includes("light")
+      ) {
+        e.state = "Idle";
+        e.y = e.homeY - 105;
+        continue;
+      }
       if (distance < 440 && !e.noLoot) {
         if (!w.battle.discovered.includes(e.kind)) {
           w.battle.discovered.push(e.kind);
@@ -413,6 +423,108 @@ export class EnemyAI {
     if (e.kind === "stalker") {
       e.vx = e.facing * 310;
       e.vy = -240;
+    }
+    if (e.kind === "bloom") {
+      for (let i = -1; i <= 1; i++)
+        w.combat.hostileShot(
+          x,
+          y,
+          e.attackX + i * 90,
+          e.attackY,
+          170,
+          d.damage,
+          "toxic",
+          12,
+        );
+      w.combat.hazard(
+        {
+          kind: "circle",
+          x: e.attackX,
+          y: 755,
+          w: 0,
+          h: 0,
+          radius: 90,
+          facing: 1,
+        },
+        12,
+        "toxic",
+        1.4,
+        2.5,
+        "독성 블룸 포자",
+        "poison",
+      );
+    }
+    if (e.kind === "lurker") {
+      e.vx = e.facing * 350;
+      e.vy = -300;
+    }
+    if (e.kind === "wraith" || e.kind === "drone") {
+      w.combat.hostileShot(
+        x,
+        y,
+        e.attackX,
+        e.attackY,
+        220,
+        d.damage,
+        "plasma",
+        10,
+      );
+      if (e.kind === "wraith")
+        w.combat.hazard(
+          { kind: "circle", x, y, w: 0, h: 0, radius: 140, facing: 1 },
+          18,
+          "electric",
+          1.3,
+          0.4,
+          "방사 에너지 방출",
+        );
+    }
+    if (e.kind === "guardian") {
+      w.combat.hazard(
+        {
+          kind: "rect",
+          x: e.attackX - 65,
+          y: 620,
+          w: 130,
+          h: 160,
+          radius: 0,
+          facing: 1,
+        },
+        d.damage,
+        "electric",
+        1.3,
+        0.3,
+        "기계 코어 강타",
+      );
+      if (e.action++ % 3 === 0 && e.regenBudget > 0) {
+        e.shield = 70;
+        e.regenBudget = Math.max(0, e.regenBudget - 70);
+      }
+    }
+    if (e.kind === "devourer") {
+      for (let i = -2; i <= 2; i++)
+        w.combat.hostileShot(
+          x,
+          y,
+          e.attackX,
+          e.attackY + i * 60,
+          210,
+          d.damage,
+          "plasma",
+          12,
+        );
+      if (e.regenBudget > 0) {
+        const n = Math.min(55, e.maxHp - e.hp, e.regenBudget);
+        e.hp += n;
+        e.regenBudget -= n;
+        w.combat.effect(
+          { kind: "circle", x, y, w: 0, h: 0, radius: 130, facing: 1 },
+          "#c6a9ea",
+          1,
+          true,
+          "결정 에너지 흡수",
+        );
+      }
     }
     w.sound("enemy_" + e.kind);
   }

@@ -9,7 +9,7 @@ import {
 } from "../data/battle";
 import { baseStats, EquipmentSystem } from "../combat/EquipmentSystem";
 import type { GearSlot, SkillId, Stats } from "../combat/types";
-const statNames: Record<keyof Stats, string> = {
+export const statNames: Record<keyof Stats, string> = {
   hp: "최대 체력",
   energy: "최대 에너지",
   attack: "공격력",
@@ -84,7 +84,7 @@ export function characterPanel(w: World) {
     })
     .join(
       "",
-    )}</div><h3 class="panel-section-title">획득한 장비 · ${b.gear.length}개</h3><div class="gear-bag">${b.gear.length ? b.gear.map((g) => `<button data-action="gear" data-value="${g.id}"><b style="color:${rarities[g.rarity].color}">${gearTemplates[g.template].icon} ${gearTemplates[g.template].name}</b><small>${rarities[g.rarity].name} ${Object.values(b.equipment).includes(g.id) ? "· 장착 중" : ""}</small></button>`).join("") : '<p class="muted">생명체·엘리트·보급품에서 장비를 획득할 수 있습니다.</p>'}</div><div id="gear-detail"></div>`;
+    )}</div><h3 class="panel-section-title">획득한 장비 · ${b.gear.length}개</h3><div class="gear-bag">${b.gear.length ? b.gear.map((g) => `<button data-action="gear" data-value="${g.id}"><b style="color:${rarities[g.rarity].color}">${gearTemplates[g.template].icon} ${gearTemplates[g.template].name} +${g.upgrade ?? 0} ${g.locked ? "♧" : ""}</b><small>${rarities[g.rarity].name} ${Object.values(b.equipment).includes(g.id) ? "· 장착 중" : ""}</small></button>`).join("") : '<p class="muted">생명체·엘리트·보급품에서 장비를 획득할 수 있습니다.</p>'}</div><div id="gear-detail"></div>`;
 }
 export function gearDetail(w: World, id: string, confirm = false) {
   const g = w.battle.gear.find((g) => g.id === id);
@@ -100,7 +100,7 @@ export function gearDetail(w: World, id: string, confirm = false) {
           : "secondary"
         : undefined,
     );
-  return `<section class="gear-detail"><h3 style="color:${rarities[g.rarity].color}">${rarities[g.rarity].name} · ${t.name}</h3><p>현재 장비와 비교 ${
+  return `<section class="gear-detail"><h3 style="color:${rarities[g.rarity].color}">${rarities[g.rarity].name} · ${t.name} +${g.upgrade ?? 0} ${g.locked ? "· 잠금" : ""}</h3><p>현재 장비와 비교 ${
     Object.entries(delta)
       .filter(([, v]) => v !== 0)
       .map(
@@ -108,7 +108,7 @@ export function gearDetail(w: World, id: string, confirm = false) {
           `<span class="${v > 0 ? "positive" : "negative"}">${statNames[k as keyof Stats]} ${v > 0 ? "+" : ""}${fmt(k, v)}</span>`,
       )
       .join(" · ") || "동일한 능력치"
-  }</p><div>${t.weapon ? `<button data-action="equip" data-value="primary:${id}">주무기 장착</button><button data-action="equip" data-value="secondary:${id}">보조 무기 장착</button>` : `<button data-action="equip" data-value="${t.slot}:${id}">장착</button>`}<button data-action="${confirm ? "sell-confirm" : "sell"}" data-value="${id}" ${Object.values(w.battle.equipment).includes(id) ? "disabled" : ""}>${confirm ? "판매 확정 · 되돌릴 수 없음" : `판매 · ${Math.round(rarities[g.rarity].mult * 20)} CR`}</button></div></section>`;
+  }</p><div>${t.weapon ? `<button data-action="equip" data-value="primary:${id}">주무기 장착</button><button data-action="equip" data-value="secondary:${id}">보조 무기 장착</button>` : `<button data-action="equip" data-value="${t.slot}:${id}">장착</button>`}<button data-action="${confirm ? "sell-confirm" : "sell"}" data-value="${id}" ${g.locked || Object.values(w.battle.equipment).includes(id) ? "disabled" : ""}>${confirm ? "판매 확정 · 되돌릴 수 없음" : `판매 · ${Math.round(rarities[g.rarity].mult * 20)} CR`}</button></div></section>`;
 }
 export function skillsPanel(w: World) {
   return `<div class="skill-slot-overview">${w.battle.skillSlots.map((id, i) => `<div><kbd>${["Q", "E", "R", "T"][i]}</kbd> ${id ? skills[id].name : "빈 슬롯"}<button data-action="skill-clear" data-value="${i}">비우기</button></div>`).join("")}</div><div class="skill-library">${Object.entries(

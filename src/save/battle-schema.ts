@@ -10,6 +10,9 @@ export const validGear = (g: unknown): g is Gear =>
   typeof g.id === "string" &&
   /^gear-\d+$/.test(g.id) &&
   Object.hasOwn(gearTemplates, g.template) &&
+  (g.upgrade === undefined ||
+    (number(g.upgrade, 5) && Number.isInteger(g.upgrade))) &&
+  (g.locked === undefined || typeof g.locked === "boolean") &&
   ["common", "uncommon", "rare", "epic"].includes(g.rarity);
 export function validBattle(b: unknown): b is BattleSave {
   if (!obj(b)) return false;
@@ -41,7 +44,7 @@ export function validBattle(b: unknown): b is BattleSave {
   )
     return false;
   if (
-    b.gear.length > 24 ||
+    b.gear.length > 36 ||
     b.gear.some((g: unknown) => !validGear(g)) ||
     new Set(b.gear.map((g: Gear) => g.id)).size !== b.gear.length ||
     !obj(b.equipment)
@@ -92,7 +95,7 @@ export function validBattle(b: unknown): b is BattleSave {
   )
     return false;
   if (
-    b.discovered.length > 12 ||
+    b.discovered.length > 24 ||
     b.discovered.some((s: string) => !Object.hasOwn(enemyData, s))
   )
     return false;

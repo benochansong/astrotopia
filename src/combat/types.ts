@@ -33,6 +33,8 @@ export interface Stats {
   elementResist: number;
 }
 export interface Gear {
+  upgrade?: number;
+  locked?: boolean;
   id: string;
   template: string;
   rarity: Rarity;

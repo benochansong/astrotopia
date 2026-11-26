@@ -1,3 +1,5 @@
+import { environments, regionEnvironment } from "../survival/catalog";
+import { SurvivalSystem } from "../survival/SurvivalSystem";
 import {
   enemyData,
   items,
@@ -36,7 +38,7 @@ import { CombatSystem } from "../combat/CombatSystem";
 import { createEnemy } from "../combat/EnemyAI";
 import type { Element } from "../combat/types";
 export type WorldEvent = {
-  type: "sound" | "toast" | "save" | "ending";
+  type: "sound" | "toast" | "save" | "ending" | "facility";
   text: string;
 };
 export function createPlayer(x = 360, y = 716): Player {
@@ -69,8 +71,26 @@ export class World {
   battle = newBattle();
   settings = defaultSettings();
   combat = new CombatSystem(this);
+  survival = new SurvivalSystem(this);
   get stats() {
-    return EquipmentSystem.stats(this.player.level, this.battle);
+    const stats = EquipmentSystem.stats(this.player.level, this.battle);
+    stats.defense += this.survival.resistance.defense;
+    if (this.survival.state.equipped.includes("advanced")) stats.regen += 2;
+    const weapon = this.combat.weapons.id,
+      gear = this.battle.gear.find(
+        (g) =>
+          g.id ===
+          this.battle.equipment[
+            this.battle.activeSlot === 0 ? "primary" : "secondary"
+          ],
+      );
+    if (
+      this.survival.state.technologies.includes("melee") &&
+      ["blade", "hammer"].includes(weapon) &&
+      gear?.template.includes("_mk")
+    )
+      stats.attack *= 1.05;
+    return stats;
   }
   region: RegionId = "crash";
   progress: Progress = newProgress();
@@ -112,6 +132,8 @@ export class World {
   constructor(save?: SaveData) {
     if (save) {
       this.battle = structuredClone(save.battle);
+      this.survival.state = structuredClone(save.survival);
+      this.cooldowns = { ...save.survival.miningCooldowns };
       this.settings = { ...save.settings };
       this.region = save.region;
       this.player = createPlayer(save.x, save.y);
@@ -135,6 +157,13 @@ export class World {
     this.safe = { x: this.player.x, y: this.player.y };
     this.spawnEnemies();
     this.combat.unlock();
+    this.survival.production.offline();
+    if (!["crash", "forest", "valley"].includes(this.region)) {
+      this.player.x = this.map.spawn;
+      this.player.y = 716;
+      this.survival.environment.grace = 12;
+      this.safe = { x: this.player.x, y: this.player.y };
+    }
     this.camera.x = Math.max(0, this.player.x - 500);
   }
   get map() {
@@ -175,11 +204,16 @@ export class World {
       if (!q.goals.every(([id, , n]) => (this.progress.counters[id] ?? 0) >= n))
         break;
       this.progress.quest++;
+      this.survival.state.researchPoints += 2;
       this.addXp(q.xp);
       this.toast(`임무 완료 · ${q.name}  +${q.xp} XP`);
       this.sound("quest");
       this.emit("save", "quest");
-      if (this.progress.quest === 4 || this.progress.quest === 10)
+      if (
+        this.progress.quest === 4 ||
+        this.progress.quest === 10 ||
+        this.progress.quest === 18
+      )
         this.emit(
           "ending",
           "이 행성에는 우리가 생각했던 것보다 훨씬 오래된 비밀이 존재한다.",
@@ -205,8 +239,9 @@ export class World {
   collect(item: ItemId, count: number) {
     const next = { ...this.inventory };
     if (
-      !addItem(next, item, count) ||
-      occupiedSlots(next) + this.battle.gear.length > 24
+      !addItem(next, item, count, this.survival.state.capacity) ||
+      occupiedSlots(next) + this.battle.gear.length >
+        this.survival.state.capacity
     ) {
       this.toast(
         "인벤토리가 가득 찼습니다. 회복 키트를 사용해 공간을 확보하세요.",
@@ -214,6 +249,7 @@ export class World {
       return false;
     }
     this.inventory = next;
+    this.survival.discovery.resource(item);
     this.count(item, count);
     this.toast(`${items[item].name} +${count}`);
     this.sound("pickup");
@@ -242,6 +278,7 @@ export class World {
     const p = this.player;
     if (p.invulnerable > 0 || this.dead > 0 || this.combat.training) return;
     const actual = this.combat.receive(amount, element);
+    this.mining = null;
     p.hp = Math.max(0, p.hp - actual);
     p.invulnerable = 1.1;
     p.vx = (p.x < fromX ? -1 : 1) * 280;
@@ -271,12 +308,17 @@ export class World {
     this.player.hp = this.stats.hp;
     this.player.energy = this.stats.energy;
     this.player.invulnerable = 4;
+    this.survival.state.oxygen = this.survival.oxygen.maximum;
+    this.survival.state.exposure = { toxic: 0, radiation: 0, unstable: 0 };
+    this.survival.environment.grace = 12;
     this.dead = 0;
     this.toast("회복 지점에서 깨어났습니다 · 자원과 경험치는 유지됩니다.");
     this.emit("save", "respawn");
   }
   enterRegion(id: RegionId, x?: number) {
     this.combat.reset();
+    this.survival.sentinel.abort();
+    this.survival.environment.grace = 8;
     this.region = id;
     const p = this.player;
     p.x = x ?? regions[id].spawn;
@@ -301,6 +343,7 @@ export class World {
     this.regionNotice = 4.5;
     if (!this.progress.discovered.includes(id)) {
       this.progress.discovered.push(id);
+      this.survival.discovery.record("지역 발견 · " + regions[id].name, 4);
       this.addXp(25);
       this.count(id);
       this.toast(`새로운 지역 발견 · ${regions[id].name} +25 XP`);
@@ -311,6 +354,12 @@ export class World {
       !this.progress.counters.returnCamp
     )
       this.count("returnCamp");
+    if (
+      id === "crash" &&
+      this.survival.state.sentinelKills > 0 &&
+      !this.progress.counters.returnFrontier
+    )
+      this.count("returnFrontier");
     this.emit("save", "region");
   }
   nearby() {
@@ -333,7 +382,12 @@ export class World {
         )
         .map((l) => ({
           id: l.id,
-          label: l.label,
+          label:
+            l.kind === "portal" && l.target
+              ? l.label +
+                " · " +
+                environments[regionEnvironment(l.target, 1200, 716)].hint
+              : l.label,
           x: l.x,
           y: l.y,
           landmark: l,
@@ -352,11 +406,11 @@ export class World {
       return;
     }
     if ("node" in target) {
-      this.mining = { node: target.node, elapsed: 0 };
-      this.sound("mine");
+      this.survival.mining.start(target.node);
       return;
     }
     const l = target.landmark;
+    if (this.survival.interact(l)) return;
     if (l.kind === "training") {
       this.combat.startTraining();
       return;
@@ -390,6 +444,8 @@ export class World {
       return;
     }
     if (l.kind === "heal") {
+      this.survival.state.oxygen = this.survival.oxygen.maximum;
+      this.survival.state.exposure = { toxic: 0, radiation: 0, unstable: 0 };
       this.player.hp = this.stats.hp;
       this.player.energy = this.stats.energy;
       this.progress.checkpoint = { region: this.region, x: l.x };
@@ -451,6 +507,7 @@ export class World {
   update(dt: number, input: InputFrame) {
     dt = Math.min(dt, 0.1);
     this.time += dt;
+    this.survival.production.tick(dt);
     this.transition = Math.max(0, this.transition - dt);
     this.regionNotice = Math.max(0, this.regionNotice - dt);
     this.camera.shake = Math.max(0, this.camera.shake - dt * 25);
@@ -485,6 +542,8 @@ export class World {
     }
     input = { ...input, ...this.buffered };
     this.buffered = {};
+    this.survival.update(dt, input);
+    if (this.dead > 0) return;
     this.combat.beforeMovement(dt, input);
     const p = this.player;
     if (input.interact) this.interact();
@@ -547,40 +606,18 @@ export class World {
       this.burst(p.x + 17, p.y + 40, "#77e5df", 2);
       if (input.dash) this.sound("dash");
     }
-    if (this.mining) {
-      const { node } = this.mining;
-      if (
-        Math.abs(p.x + 17 - node.x) > 100 ||
-        Math.abs(p.y + p.h - node.y) > 80 ||
-        input.attack ||
-        p.dash > 0
-      ) {
-        this.mining = null;
-      } else {
-        this.mining.elapsed += dt;
-        p.animation = "Mining";
-        if (
-          Math.floor(this.mining.elapsed * 8) !==
-          Math.floor((this.mining.elapsed - dt) * 8)
-        )
-          this.burst(node.x, node.y - 20, items[node.item].color, 2);
-        if (this.mining.elapsed >= 1.1) {
-          if (this.collect(node.item, node.count)) {
-            this.cooldowns[node.id] = node.respawn;
-            this.emit("save", "mining");
-          }
-          this.mining = null;
-        }
-      }
-    }
+    this.survival.mining.update(dt, input);
     for (const id in this.cooldowns)
       this.cooldowns[id] = Math.max(0, this.cooldowns[id] - dt);
     this.combat.update(dt, input);
     this.effects(dt);
-    const targetX = this.combat.boss.active?this.map.width-1280:Math.max(
-      0,
-      Math.min(this.map.width - 1280, p.x - 600 + p.facing * 100),
-    );
+    const targetX =
+      this.combat.boss.active || this.survival.sentinel.active
+        ? this.map.width - 1280
+        : Math.max(
+            0,
+            Math.min(this.map.width - 1280, p.x - 600 + p.facing * 100),
+          );
     const targetY = Math.max(0, Math.min(350, p.y - 490));
     const ease = 1 - Math.exp(-dt * 5);
     this.camera.x += (targetX - this.camera.x) * ease;
@@ -588,7 +625,7 @@ export class World {
     const index = regionOrder.indexOf(this.region);
     if (p.x > this.map.width - p.w - 5 && index < 2)
       this.enterRegion(regionOrder[index + 1]);
-    else if (p.x < 3 && index > 0)
+    else if (p.x < 3 && index > 0 && index < 3)
       this.enterRegion(
         regionOrder[index - 1],
         regions[regionOrder[index - 1]].width - 110,
@@ -619,7 +656,11 @@ export class World {
   }
   snapshot(settings: Settings): SaveData {
     return {
-      version: 2,
+      version: 3,
+      survival: {
+        ...structuredClone(this.survival.state),
+        miningCooldowns: { ...this.cooldowns },
+      },
       battle: {
         ...structuredClone(this.battle),
         ...(this.combat.training

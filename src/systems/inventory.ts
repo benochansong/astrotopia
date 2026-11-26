@@ -11,11 +11,12 @@ export function addItem(
   inventory: Inventory,
   id: ItemId,
   count: number,
+  capacity = INVENTORY_SIZE,
 ): boolean {
   if (!Object.hasOwn(items, id) || !Number.isInteger(count) || count < 1)
     return false;
   const next = { ...inventory, [id]: (inventory[id] ?? 0) + count };
-  if (occupiedSlots(next) > INVENTORY_SIZE) return false;
+  if (occupiedSlots(next) > capacity) return false;
   inventory[id] = next[id];
   return true;
 }

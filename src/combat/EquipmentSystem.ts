@@ -18,7 +18,7 @@ export function baseStats(level: number): Stats {
 }
 export function gearStats(gear: Gear): Partial<Stats> {
   const t = gearTemplates[gear.template],
-    m = rarities[gear.rarity].mult;
+    m = rarities[gear.rarity].mult * (1 + (gear.upgrade ?? 0) * 0.12);
   return Object.fromEntries(
     Object.entries(t.stats).map(([k, v]) => [k, v * m]),
   );

@@ -57,7 +57,8 @@ export interface Progress {
   checkpoint: { region: RegionId; x: number };
 }
 export interface SaveData {
-  version: 2;
+  version: 3;
+  survival: import("../survival/types").SurvivalSave;
   battle: BattleSave;
   savedAt: number;
   region: RegionId;
@@ -158,6 +159,8 @@ export interface FloatingText {
   life: number;
 }
 export interface InputFrame {
+  scan?: boolean;
+  quick?: number;
   special?: boolean;
   weaponSlot?: 0 | 1;
   skillSlot?: number;

@@ -1,4 +1,12 @@
 import {
+  frontierBackground,
+  frontierStructures,
+  frontierResource,
+  frontierEnemy,
+  miningTool,
+  explorationOverlay,
+} from "./survival-art";
+import {
   drawWeapon,
   drawCreature,
   enemyMarks,
@@ -468,7 +476,7 @@ export class Art {
     c.restore();
   }
   terrain(c: CanvasRenderingContext2D, w: World) {
-    const valley = w.region === "valley";
+    const valley = ["valley", "caverns", "ruins", "abyss"].includes(w.region);
     for (const t of w.map.platforms) {
       if (t.x + t.w < w.camera.x - 80 || t.x > w.camera.x + 1360) continue;
       const bottom = t.oneWay ? t.y + 30 : t.y + 300;
@@ -905,6 +913,7 @@ export class Art {
     c.globalAlpha = 1;
   }
   enemy(c: CanvasRenderingContext2D, e: Enemy, time: number) {
+    if (frontierEnemy(c, e, time, false)) return;
     if (!["slime", "crawler", "manta"].includes(e.kind)) {
       drawCreature(c, e, time);
       return;
@@ -984,7 +993,8 @@ export class Art {
     enemyMarks(c, e);
   }
   world(c: CanvasRenderingContext2D, w: World, low = false) {
-    this.background(c, w.region, w.camera, w.time, low);
+    if (!frontierBackground(c, w, low))
+      this.background(c, w.region, w.camera, w.time, low);
     c.save();
     c.translate(
       -w.camera.x + (Math.random() - 0.5) * w.camera.shake * w.settings.shake,
@@ -992,6 +1002,7 @@ export class Art {
     );
     this.terrain(c, w);
     this.landmarks(c, w);
+    frontierStructures(c, w);
     drawCombat(c, w);
     drawTitan(c, w);
     for (const l of w.map.landmarks)
@@ -1019,6 +1030,7 @@ export class Art {
       if (w.cooldowns[n.id] > 0 || Math.abs(n.x - w.camera.x - 640) > 750)
         continue;
       const col = items[n.item].color;
+      if (frontierResource(c, n, w.time)) continue;
       if (n.item === "fiber") fern(c, n.x, n.y, 55, col, n.x);
       else if (n.item === "scrap") {
         poly(
@@ -1064,6 +1076,7 @@ export class Art {
       w.combat.weapons.charge,
       w.combat.weapons.comboStep,
     );
+    if (w.mining) miningTool(c, w);
     for (const p of w.particles)
       if (p.active) {
         c.globalAlpha = Math.min(1, p.life * 2);
@@ -1085,13 +1098,13 @@ export class Art {
         c,
         n.x - 30,
         n.y - 87,
-        (60 * w.mining.elapsed) / 1.1,
+        (60 * w.mining.elapsed) / w.survival.mining.duration(n),
         5,
         "#bfeacb",
         2,
       );
     }
-    if (w.region !== "valley") {
+    if (["crash", "forest"].includes(w.region)) {
       const x = w.map.width - 130;
       line(c, [x, 690, x, 775], "#9bccc4", 2);
       poly(
@@ -1104,6 +1117,7 @@ export class Art {
       c.fillText("NEXT", x + 25, 711);
     }
     c.restore();
+    explorationOverlay(c, w, low);
     // Foreground leaves provide a fourth depth layer, confined to the corners.
     if (!low) {
       fern(c, -10, 760, 170, w.region === "valley" ? "#163044" : "#0e3037");

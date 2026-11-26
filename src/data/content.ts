@@ -1,6 +1,15 @@
+import { extraItems, type NewItemId } from "../survival/catalog";
+import {
+  frontierRegions,
+  frontierEnemies,
+  frontierQuests,
+  type FrontierRegion,
+  type FrontierEnemy,
+} from "../survival/regions";
 import type { Element, EliteAffix } from "../combat/types";
-export type RegionId = "crash" | "forest" | "valley";
+export type RegionId = FrontierRegion | "crash" | "forest" | "valley";
 export type ItemId =
+  | NewItemId
   | "iron"
   | "copper"
   | "crystal"
@@ -14,6 +23,7 @@ export type ItemId =
   | "ancientCrystal"
   | "titanCore";
 export type EnemyKind =
+  | FrontierEnemy
   | "slime"
   | "crawler"
   | "manta"
@@ -34,6 +44,11 @@ export interface Platform {
   oneWay?: boolean;
 }
 export interface Resource {
+  tier?: number;
+  seconds?: number;
+  reserve?: number;
+  difficulty?: number;
+  rareChance?: number;
   id: string;
   item: ItemId;
   x: number;
@@ -42,6 +57,8 @@ export interface Resource {
   respawn: number;
 }
 export interface Landmark {
+  target?: RegionId;
+  facility?: import("../survival/catalog").Facility;
   id: string;
   label: string;
   x: number;
@@ -54,7 +71,12 @@ export interface Landmark {
     | "chest"
     | "ruin"
     | "training"
-    | "boss";
+    | "boss"
+    | "facility"
+    | "portal"
+    | "relay"
+    | "beaconSite"
+    | "sentinel";
 }
 export interface Region {
   id: RegionId;
@@ -136,6 +158,7 @@ export const items: Record<
     icon: string;
   }
 > = {
+  ...extraItems,
   fragment: {
     name: "수정 파편",
     type: "부품",
@@ -237,6 +260,7 @@ export interface EnemyData {
   flying?: boolean;
 }
 export const enemyData: Record<EnemyKind, EnemyData> = {
+  ...frontierEnemies,
   spore: {
     name: "SPORE WALKER",
     hp: 90,
@@ -409,6 +433,7 @@ const node = (
   count = 1,
 ): Resource => ({ id, item, x, y, count, respawn: 35 });
 export const regions: Record<RegionId, Region> = {
+  ...frontierRegions,
   crash: {
     id: "crash",
     name: "불시착 지점",
@@ -570,7 +595,15 @@ export const regions: Record<RegionId, Region> = {
     ],
   },
 };
-export const regionOrder: RegionId[] = ["crash", "forest", "valley"];
+export const regionOrder: RegionId[] = [
+  "crash",
+  "forest",
+  "valley",
+  "marsh",
+  "caverns",
+  "ruins",
+  "abyss",
+];
 export const questData = [
   {
     name: "생존자",
@@ -673,6 +706,7 @@ export const questData = [
     ],
     xp: 250,
   },
+  ...frontierQuests,
 ] as const;
 export const opening = [
   [
@@ -756,3 +790,54 @@ planets[0].enemyTypes = [
   "golem",
   "stalker",
 ];
+
+regions.crash.landmarks.push(
+  ...(
+    [
+      "terminal",
+      "workbench",
+      "refinery",
+      "research",
+      "equipment",
+      "warehouse",
+    ] as const
+  ).map((facility, i) => ({
+    id: "facility-" + facility,
+    label: [
+      "생존 터미널",
+      "기초 제작대",
+      "광물 정제소",
+      "연구 터미널",
+      "장비 작업소",
+      "개인 창고",
+    ][i],
+    kind: "facility" as const,
+    facility,
+    x: [110, 750, 950, 1320, 1600, 1900][i],
+    y: 780,
+  })),
+);
+regions.forest.landmarks.push({
+  id: "to-marsh",
+  kind: "portal",
+  target: "marsh",
+  x: 3520,
+  y: 780,
+  label: "독성 습지 · 권장 정화 마스크 · F",
+});
+for (const [id, item, x, count] of [
+  ["coal", "coal", 2300, 8],
+  ["fiber", "fiber", 1920, 9],
+] as [string, ItemId, number, number][])
+  regions.crash.resources.push(node("frontier-" + id, item, x, 780, count));
+for (const [id, item, x, count] of [
+  ["silicon", "silicon", 400, 10],
+  ["resin", "resin", 550, 8],
+  ["enzyme", "enzyme", 1500, 5],
+  ["ecology", "ecology", 1850, 3],
+] as [string, ItemId, number, number][])
+  regions.forest.resources.push(node("frontier-" + id, item, x, 780, count));
+for (const r of Object.values(regions))
+  for (const n of r.resources)
+    if (["iron", "copper", "fiber"].includes(n.item))
+      n.count = Math.max(6, n.count);

@@ -43,6 +43,7 @@ export class DamageSystem {
     if (e.kind === "beetle" && !weak) multiplier *= 0.4;
     if (weak) multiplier *= 1.35;
     if (core) multiplier *= 1.65;
+    if (e.kind === "guardian" && e.shield <= 0) multiplier *= 1.4;
     const defense = (d.defense ?? 0) + (e.elite === "fortified" ? 8 : 0),
       shred = e.statuses.some((s) => s.id === "shred") ? 1.2 : 1;
     const critical = roll < a.crit;

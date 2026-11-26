@@ -1,3 +1,5 @@
+import { survivalAction, facilityTab } from "./ui/survival-actions";
+import { productionQueue } from "./ui/survival-ui";
 import Phaser from "phaser";
 import "./ui/style.css";
 import { World } from "./core/world";
@@ -105,6 +107,10 @@ ui.action = (action, value) => {
     openModal(action as Exclude<Modal, null>);
     return;
   }
+  if (world && survivalAction(world, ui, action, value, settings)) {
+    input.clear();
+    return;
+  }
   switch (action) {
     case "weapon-switch":
       world?.combat.weapons.switch(Number(value) as 0 | 1);
@@ -154,7 +160,7 @@ ui.action = (action, value) => {
         !Object.values(world.battle.equipment).includes(value!)
       ) {
         const g = world.battle.gear.find((g) => g.id === value);
-        if (g) {
+        if (g && !g.locked) {
           world.battle.credits += Math.round(rarities[g.rarity].mult * 20);
           world.battle.gear = world.battle.gear.filter((g) => g.id !== value);
           ui.open("character", world, settings);
@@ -282,16 +288,19 @@ ui.setting = (key, value) => {
 input.onMenu = (key) => {
   audio.start();
   if (mode !== "game" || !world || world.dead > 0) return;
+  if (key === "KeyN") ui.hubTab = "codex";
   const target =
-    key === "KeyI"
-      ? "inventory"
-      : key === "KeyM"
-        ? "map"
-        : key === "KeyC"
-          ? "character"
-          : key === "KeyV"
-            ? "skills"
-            : "pause";
+    key === "KeyB" || key === "KeyN"
+      ? "hub"
+      : key === "KeyI"
+        ? "inventory"
+        : key === "KeyM"
+          ? "map"
+          : key === "KeyC"
+            ? "character"
+            : key === "KeyV"
+              ? "skills"
+              : "pause";
   if (ui.modal) closeModal();
   else openModal(target);
 };
@@ -381,7 +390,19 @@ class ExpeditionScene extends Phaser.Scene {
           audio.play("step");
         }
       }
+      if (ui.modal) world.survival.production.tick(dt);
+      if (
+        ui.modal === "hub" &&
+        Math.floor(ambientTime * 2) !== Math.floor((ambientTime - dt) * 2)
+      ) {
+        const queue = ui.dialog.querySelector("#production-queue");
+        if (queue) queue.innerHTML = productionQueue(world);
+      }
       for (const event of world.events.splice(0)) {
+        if (event.type === "facility") {
+          ui.hubTab = facilityTab(event.text);
+          openModal("hub");
+        }
         if (event.type === "toast") ui.toast(event.text);
         if (event.type === "sound") audio.play(event.text);
         if (event.type === "save") save();
@@ -391,7 +412,7 @@ class ExpeditionScene extends Phaser.Scene {
         }
       }
       audio.region(
-        world.combat.boss.active
+        world.combat.boss.active || world.survival.sentinel.active
           ? "boss" + world.combat.boss.phase
           : world.region,
       );

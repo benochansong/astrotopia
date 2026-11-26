@@ -132,6 +132,8 @@ export class CombatSystem {
         this.hit(e, a, strong);
         if (
           strong &&
+          e.kind !== "sentinel" &&
+          e.kind !== "conduit" &&
           e.kind !== "titan" &&
           e.kind !== "dummy" &&
           e.launched < 2
@@ -210,7 +212,7 @@ export class CombatSystem {
         a.status,
         Math.max(2, w.stats.attack * 0.12),
         !!e.elite,
-        e.kind === "titan",
+        e.kind === "titan" || e.kind === "sentinel" || e.kind === "conduit",
         e.ccImmunity,
       );
       if (e.statuses.some((s) => s.id === "freeze" || s.id === "stun"))
@@ -221,6 +223,15 @@ export class CombatSystem {
       return;
     }
     if (e.hp <= 0) {
+      if (e.kind === "sentinel") {
+        w.survival.sentinel.defeat();
+        return;
+      }
+      if (e.kind === "conduit") {
+        e.state = "Death";
+        e.timer = 999;
+        return;
+      }
       if (e.kind === "titan") {
         this.boss.defeat();
         return;

@@ -120,6 +120,7 @@ export class WeaponSystem {
     this.held = input.attack;
   }
   private pay(cost: number) {
+    if (this.w.survival.state.equipped.includes("advanced")) cost *= 0.9;
     if (this.w.player.energy < cost) {
       if (this.w.player.shotCooldown === 0)
         this.w.toast("에너지가 부족합니다.");

@@ -26,7 +26,11 @@ export class Input {
           e.preventDefault();
         if (!e.repeat) {
           this.pressed.add(e.code);
-          if (["Escape", "KeyI", "KeyM", "KeyC", "KeyV"].includes(e.code))
+          if (
+            ["Escape", "KeyI", "KeyM", "KeyC", "KeyV", "KeyB", "KeyN"].includes(
+              e.code,
+            )
+          )
             this.onMenu(e.code);
         }
         this.held.add(e.code);
@@ -42,6 +46,14 @@ export class Input {
   }
   frame(): InputFrame {
     return {
+      scan: this.pressed.has("KeyG"),
+      quick: this.pressed.has("Digit3")
+        ? 0
+        : this.pressed.has("Digit4")
+          ? 1
+          : this.pressed.has("Digit5")
+            ? 2
+            : undefined,
       left: this.held.has("KeyA") || this.held.has("ArrowLeft"),
       right: this.held.has("KeyD") || this.held.has("ArrowRight"),
       jump: this.pressed.has("Space"),

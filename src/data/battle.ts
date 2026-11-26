@@ -1,3 +1,4 @@
+import { craftedGear } from "../survival/catalog";
 import type {
   BattleSave,
   GearSlot,
@@ -227,6 +228,7 @@ export interface GearTemplate {
   icon: string;
 }
 export const gearTemplates: Record<string, GearTemplate> = {
+  ...craftedGear,
   ...Object.fromEntries(
     Object.values(weapons).map((w) => [
       w.id,
@@ -326,6 +328,12 @@ export function newBattle(level = 1): BattleSave {
   };
 }
 export const subzones = {
+  marsh: [{ id: "marshZone", start: 0, name: "독성 습지", level: "10–15" }],
+  caverns: [
+    { id: "cavernsZone", start: 0, name: "심층 수정 동굴", level: "12–15" },
+  ],
+  ruins: [{ id: "ruinsZone", start: 0, name: "방사능 유적", level: "13–15" }],
+  abyss: [{ id: "abyssZone", start: 0, name: "심층 에너지 지대", level: "15" }],
   crash: [{ id: "landing", start: 0, name: "불시착 지점", level: "1–3" }],
   forest: [
     { id: "forestOuter", start: 0, name: "발광 숲 · 외곽", level: "3–6" },

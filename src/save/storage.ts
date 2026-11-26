@@ -1,3 +1,5 @@
+import { newSurvival } from "../survival/types";
+import { validSurvival } from "./survival-schema";
 import { items, regionOrder, regions, type ItemId } from "../data/content";
 import type { Progress, SaveData, Settings } from "../core/types";
 import { occupiedSlots } from "../systems/inventory";
@@ -43,7 +45,7 @@ export function parseSave(raw: string | null): SaveData | null {
     const s = JSON.parse(raw);
     if (
       !object(s) ||
-      ![1, 2].includes(Number(s.version)) ||
+      ![1, 2, 3].includes(Number(s.version)) ||
       !regionOrder.includes(s.region as never) ||
       !finite(s.savedAt, 0, 1e15) ||
       !finite(s.level, 1, 15) ||
@@ -63,10 +65,10 @@ export function parseSave(raw: string | null): SaveData | null {
       Object.entries(s.inventory).some(
         ([id, n]) =>
           !Object.hasOwn(items, id) ||
-          !finite(n, 0, 2376) ||
+          !finite(n, 0, s.version === 3 ? 3564 : 2376) ||
           !Number.isInteger(n),
       ) ||
-      occupiedSlots(s.inventory) > 24
+      occupiedSlots(s.inventory) > (s.version === 3 ? 36 : 24)
     )
       return null;
     const p = s.progress;
@@ -79,11 +81,11 @@ export function parseSave(raw: string | null): SaveData | null {
     )
       return null;
     if (
-      !finite(p.quest, 0, s.version === 1 ? 4 : 10) ||
+      !finite(p.quest, 0, s.version === 1 ? 4 : s.version === 2 ? 10 : 18) ||
       !Number.isInteger(p.quest) ||
       !Array.isArray(p.discovered) ||
       p.discovered.some((r) => !regionOrder.includes(r)) ||
-      p.discovered.length > 3
+      p.discovered.length > 7
     )
       return null;
     const landmarkIds = Object.values(regions).flatMap((r) =>
@@ -91,7 +93,7 @@ export function parseSave(raw: string | null): SaveData | null {
     );
     if (
       !Array.isArray(p.opened) ||
-      p.opened.length > 30 ||
+      p.opened.length > 60 ||
       p.opened.some((id) => !landmarkIds.includes(id))
     )
       return null;
@@ -107,10 +109,15 @@ export function parseSave(raw: string | null): SaveData | null {
       s.settings = { ...defaultSettings(), ...s.settings };
       s.version = 2;
     }
+    if (s.version === 2) {
+      s.survival = newSurvival();
+      s.version = 3;
+    }
+    if (!validSurvival(s.survival)) return null;
     if (
       !validSettings(s.settings) ||
       !validBattle(s.battle) ||
-      occupiedSlots(s.inventory) + s.battle.gear.length > 24
+      occupiedSlots(s.inventory) + s.battle.gear.length > s.survival.capacity
     )
       return null;
     const stats = EquipmentSystem.stats(s.level, s.battle);
@@ -158,6 +165,15 @@ export class SaveStore {
       }
       if (legacy && !this.storage.getItem(SAVE_KEY + ".backup"))
         this.storage.setItem(SAVE_KEY + ".backup", previous!);
+      if (previous) {
+        try {
+          if (
+            JSON.parse(previous).version === 2 &&
+            !this.storage.getItem(SAVE_KEY + ".backup.v2")
+          )
+            this.storage.setItem(SAVE_KEY + ".backup.v2", previous);
+        } catch {}
+      }
       this.storage.setItem(SAVE_KEY, JSON.stringify(data));
       this.error = "";
       return true;

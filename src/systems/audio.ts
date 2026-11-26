@@ -79,6 +79,15 @@ export class AudioSystem {
     g.connect(this.sfx);
     const t = c.currentTime;
     const sounds: Record<string, [number, number, number, OscillatorType]> = {
+      mine1: [900, 400, 0.1, "triangle"],
+      mine2: [1600, 700, 0.2, "sine"],
+      mine3: [220, 70, 0.3, "sawtooth"],
+      mine4: [800, 1900, 0.4, "triangle"],
+      scanner: [1000, 2200, 0.45, "sine"],
+      oxygenWarning: [660, 440, 0.6, "triangle"],
+      environmentWarning: [390, 260, 0.4, "sine"],
+      craftComplete: [523, 1046, 0.6, "triangle"],
+      researchComplete: [440, 1760, 0.8, "sine"],
       pulse: [700, 140, 0.12, "triangle"],
       rifle: [180, 60, 0.065, "square"],
       blade: [1700, 90, 0.22, "sawtooth"],

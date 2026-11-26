@@ -14,6 +14,7 @@ export class LootSystem {
     const candidates = Object.keys(gearTemplates).filter(
       (id) =>
         id !== "titan" &&
+        !id.includes("_mk") &&
         (!gearTemplates[id].weapon ||
           weapons[gearTemplates[id].weapon!].level <= this.w.player.level),
     );
@@ -54,6 +55,8 @@ export class LootSystem {
     w.addXp(Math.round(d.xp * (e.elite ? 3 : 1)));
     w.battle.credits += Math.round(d.xp * (e.elite ? 2 : 0.45));
     w.count(e.kind);
+    w.survival.discovery.record("생명체 분석 · " + d.name, e.elite ? 5 : 2);
+    if (e.elite) w.survival.state.researchPoints += 1;
     this.place(e.x + d.w / 2, e.y, d.drop, e.elite ? 3 : 1);
     if (this.random() < 0.14) this.place(e.x + 15, e.y, "medkit");
     if (e.elite) {
@@ -120,7 +123,10 @@ export class LootSystem {
       }
       let collected = false;
       if (l.gear) {
-        if (occupiedSlots(w.inventory) + w.battle.gear.length < 24) {
+        if (
+          occupiedSlots(w.inventory) + w.battle.gear.length <
+          w.survival.state.capacity
+        ) {
           w.battle.gear.push(l.gear);
           const t = gearTemplates[l.gear.template];
           if (t.weapon && !w.battle.ownedWeapons.includes(t.weapon))

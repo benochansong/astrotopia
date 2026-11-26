@@ -2134,3 +2134,384 @@ progress::-webkit-progress-value {
 .item-slot[hidden] {
   display: none !important;
 }
+
+/* COLONY RISING */
+.colony-tabs {
+  display: flex;
+  gap: 5px;
+  margin: 20px 0 16px;
+  flex-wrap: wrap;
+}
+.colony-tabs button {
+  padding: 9px 14px;
+  font-size: 12px;
+}
+.colony-tabs .active,
+.colony-facility-list .active,
+.build-palette .active {
+  background: #b5d5bd;
+  color: #142f3b;
+  border-color: #dbdfad;
+}
+.colony-metrics {
+  display: grid;
+  grid-template-columns: 0.8fr 1.3fr 1fr 1.2fr;
+  background: #102d3d;
+  border: 1px solid #54767a;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.colony-metrics > div {
+  padding: 16px 18px;
+  border-right: 1px solid #46616b;
+}
+.colony-metrics small {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 1.6px;
+  color: #9ab9bb;
+  margin-bottom: 8px;
+}
+.colony-metrics strong {
+  font-size: 24px;
+  font-weight: 500;
+  color: #dce6cd;
+}
+.colony-metrics em {
+  font-style: normal;
+  font-size: 12px;
+  color: #9ebcbb;
+}
+.colony-hero {
+  display: flex;
+  gap: 30px;
+  align-items: center;
+  background: linear-gradient(115deg, #294a50, #182f42);
+  border: 1px solid #66887c;
+  border-radius: 10px;
+  padding: 24px;
+  margin-bottom: 18px;
+}
+.colony-hero h3 {
+  font-size: 27px;
+  margin: 6px 0 16px;
+}
+.colony-hero p {
+  color: #adc5c4;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.colony-orbit {
+  flex: 0 0 140px;
+  height: 140px;
+  border: 1px solid #9bc6b966;
+  border-radius: 50%;
+  font-size: 66px;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  color: #c6d9b8;
+  box-shadow:
+    0 0 0 13px #9bc6b90a,
+    0 0 0 27px #9bc6b907;
+}
+.colony-orbit span {
+  font-size: 9px;
+  letter-spacing: 3px;
+}
+.colony-controls {
+  display: flex;
+  align-items: end;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 14px 0;
+}
+.colony-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+}
+.colony-controls input[type="number"] {
+  width: 100px;
+}
+.colony-table-wrap {
+  overflow: auto;
+}
+.colony-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin: 16px 0;
+}
+.colony-table th {
+  text-align: left;
+  color: #9ebfbb;
+  font-size: 10px;
+  letter-spacing: 1px;
+  background: #102938;
+  padding: 12px;
+}
+.colony-table td {
+  border-bottom: 1px solid #35525e;
+  padding: 10px;
+}
+.colony-table button {
+  padding: 7px 10px;
+  font-size: 11px;
+}
+.colony-table input {
+  width: 80px;
+  padding: 6px;
+  margin-right: 6px;
+}
+.colony-tech {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.colony-tech article {
+  background: #152f3f;
+  border: 1px solid #45646a;
+  border-radius: 8px;
+  padding: 15px;
+}
+.colony-tech article small {
+  color: #c9c49b;
+}
+.colony-tech p {
+  font-size: 11px;
+  color: #a6c0bf;
+  line-height: 1.6;
+}
+.colony-tech h4 {
+  margin: 8px 0;
+}
+.colony-tech button {
+  width: 100%;
+  font-size: 12px;
+}
+.colony-facilities {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid #41636d;
+}
+.colony-facilities summary {
+  cursor: pointer;
+  color: #d4ddbd;
+}
+.colony-facility-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 15px 0;
+  max-height: 140px;
+  overflow: auto;
+}
+.colony-facility-list button {
+  font-size: 11px;
+  padding: 9px;
+  display: grid;
+  text-align: left;
+  gap: 4px;
+}
+.colony-facility-list small {
+  font-size: 9px;
+  opacity: 0.7;
+}
+.facility-detail {
+  background: #122b3b;
+  padding: 20px;
+  border: 1px solid #5b7c7b;
+  border-radius: 10px;
+}
+.facility-detail h3 {
+  margin: 8px 0;
+  font-size: 23px;
+}
+.facility-detail p {
+  font-size: 12px;
+  color: #adc4c4;
+  line-height: 1.6;
+}
+.facility-detail progress {
+  width: 100%;
+  height: 6px;
+  accent-color: #abcdb4;
+}
+.facility-detail label {
+  font-size: 12px;
+}
+.facility-detail select {
+  max-width: 100%;
+  margin: 8px;
+}
+.facility-status {
+  color: #d3d6ae !important;
+}
+.shortage {
+  color: #efa18d;
+}
+.colony-hero button {
+  margin: 5px 8px 0 0;
+}
+#builder-ui {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 18;
+  color: #dae5d8;
+}
+#builder-ui[hidden] {
+  display: none;
+}
+.build-top {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  top: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #102938ee;
+  border: 1px solid #628178;
+  border-radius: 8px;
+  padding: 13px 18px;
+  pointer-events: auto;
+}
+.build-top p {
+  margin: 0 0 5px;
+  font-size: 9px;
+  letter-spacing: 2px;
+}
+.build-top strong {
+  font-size: 19px;
+  font-weight: 500;
+}
+.build-top button {
+  font-size: 11px;
+  padding: 9px;
+  margin-left: 5px;
+}
+.build-palette {
+  position: absolute;
+  left: 20px;
+  top: 105px;
+  width: 250px;
+  bottom: 105px;
+  background: #102938ee;
+  border: 1px solid #567877;
+  border-radius: 8px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+}
+.build-palette > .eyebrow {
+  font-size: 9px;
+  letter-spacing: 2px;
+  margin: 0 0 12px;
+  color: #adc1af;
+}
+.build-palette nav {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.build-palette nav button {
+  padding: 7px 3px;
+  font-size: 10px;
+}
+.build-list {
+  overflow: auto;
+  flex: 1;
+  min-height: 70px;
+}
+.build-list button {
+  width: 100%;
+  display: grid;
+  gap: 6px;
+  text-align: left;
+  margin-bottom: 5px;
+  padding: 10px;
+}
+.build-list span {
+  font-size: 12px;
+}
+.build-list small {
+  font-size: 9px;
+  opacity: 0.7;
+}
+.build-spec {
+  border-top: 1px solid #476b70;
+  margin-top: 12px;
+  padding-top: 10px;
+}
+.build-spec h3 {
+  font-size: 14px;
+  margin: 0 0 7px;
+}
+.build-spec p {
+  font-size: 10px;
+  line-height: 1.6;
+  color: #b8c7ba;
+  margin: 5px 0;
+}
+.build-palette .colony-controls {
+  gap: 4px;
+  margin-bottom: 0;
+}
+.build-palette .colony-controls button {
+  padding: 8px;
+  font-size: 10px;
+}
+.build-bottom {
+  position: absolute;
+  left: 20px;
+  bottom: 22px;
+  right: 20px;
+  border-top: 1px solid #5e817e;
+  background: #112b3bdf;
+  padding: 14px 18px;
+  border-radius: 4px;
+}
+.build-bottom strong {
+  font-size: 13px;
+  font-weight: 500;
+}
+.build-bottom p {
+  font-size: 11px;
+  color: #9eb9b7;
+  margin: 8px 0 0;
+}
+.build-bottom .invalid {
+  color: #e7a08d;
+}
+.build-bottom .valid {
+  color: #b5dfb5;
+}
+.colony-live {
+  position: absolute;
+  top: 20px;
+  left: 395px;
+  width: 470px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid #65807766;
+  background: #102b3ccb;
+  border-radius: 6px;
+  font-size: 10px;
+  color: #b8d0c3;
+  pointer-events: none;
+}
+.colony-live strong {
+  display: block;
+  width: 100%;
+  text-align: center;
+  color: #f1c096;
+  font-size: 13px;
+}

@@ -29,7 +29,15 @@ export class ProductionQueueSystem {
     )
       return "수량은 1~10개입니다.";
     const facility = kind === "craft" ? recipes[id].facility : "research";
-    if (!s.facilities.includes(facility)) return "시설을 먼저 수리하세요.";
+    if (
+      !s.facilities.includes(facility) &&
+      !w.colony.state.buildings.some(
+        (b) =>
+          b.kind === (facility === "research" ? "lab" : facility) &&
+          b.remaining <= 0,
+      )
+    )
+      return "시설을 먼저 수리하세요.";
     if (kind === "craft") {
       const r = recipes[id];
       if (r.tech && !s.technologies.includes(r.tech))
@@ -107,14 +115,18 @@ export class ProductionQueueSystem {
       if (j.state !== "working") continue;
       const lane =
         j.kind === "research" ? "research" : recipes[j.recipe].facility;
-      if (lanes.has(lane)) continue;
+      if (
+        lanes.has(lane) ||
+        !this.w.colony.facilityPowered(lane as import("./catalog").Facility)
+      )
+        continue;
       lanes.add(lane);
-      j.remaining = Math.max(0, j.remaining - Math.max(0, dt));
+      j.remaining = Math.max(0, j.remaining - Math.max(0, dt) * this.w.colony.facilitySpeed(lane as import("./catalog").Facility));
       if (j.remaining === 0) {
         j.state = "ready";
         changed = true;
         this.w.toast(
-          `${j.kind === "research" ? technologies[j.recipe].name : recipes[j.recipe].name} 완료 · B에서 회수`,
+          `${j.kind === "research" ? technologies[j.recipe].name : recipes[j.recipe].name} 완료 · L에서 회수`,
         );
         this.w.sound(
           j.kind === "research" ? "researchComplete" : "craftComplete",
@@ -126,7 +138,7 @@ export class ProductionQueueSystem {
   }
   offline(now = Date.now()) {
     const s = this.w.survival.state;
-    let dt = Math.max(0, Math.min(86400, (now - s.lastClock) / 1000));
+    let dt = Math.max(0, Math.min(14400, (now - s.lastClock) / 1000));
     while (dt > 0 && s.jobs.some((j) => j.state === "working")) {
       const step = Math.min(dt, 1);
       this.tick(step);
@@ -161,7 +173,7 @@ export class ProductionQueueSystem {
     for (const [id, n] of Object.entries(rewards) as [ItemId, number][]) {
       if (
         !StorageSystem.add(inv, id, n, s.capacity - w.battle.gear.length) &&
-        !StorageSystem.add(wh, id, n, 60)
+        !StorageSystem.add(wh, id, n, w.colony.capacity)
       ) {
         w.toast("완료품 보관 공간이 부족합니다. 작업함에 안전하게 보관합니다.");
         return false;

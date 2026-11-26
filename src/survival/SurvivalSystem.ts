@@ -53,7 +53,7 @@ export class SurvivalSystem {
   get inBase() {
     return (
       this.w.region === "crash" &&
-      this.w.player.x < 2000 &&
+      (this.w.player.x < 2000 || this.w.colony.unlocked) &&
       !this.w.combat.training &&
       this.w.dead <= 0
     );

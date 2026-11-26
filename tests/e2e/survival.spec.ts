@@ -76,7 +76,7 @@ test("research UI, environmental regions, scanner and sentinel rendering", async
     w.survival.state.warehouse.resin = 3;
     w.survival.state.researchPoints = 100;
   });
-  await page.keyboard.press("KeyB");
+  await page.keyboard.press("KeyL");
   await page.locator('[data-action="hub-tab"][data-value="research"]').click();
   await page
     .locator('[data-action="research-start"][data-value="bio"]')

@@ -1,3 +1,11 @@
+import {
+  colonyAction,
+  builderPanel,
+  colonyMetrics,
+  refreshColonyStatus,
+} from "./ui/colony-ui";
+import { builderArt } from "./scenes/colony-art";
+import { definition, GRID, GROUND, BASE_END } from "./colony/catalog";
 import { survivalAction, facilityTab } from "./ui/survival-actions";
 import { productionQueue } from "./ui/survival-ui";
 import Phaser from "phaser";
@@ -69,6 +77,10 @@ function startOpening() {
 }
 function openModal(modal: Exclude<Modal, null>) {
   if (mode === "opening") return;
+  if (world?.colony.buildMode) {
+    world.colony.buildMode = false;
+    renderBuilder();
+  }
   modalReturn =
     ui.modal === "pause" && (modal === "settings" || modal === "controls")
       ? "pause"
@@ -84,6 +96,86 @@ function closeModal() {
     ui.open(target, world, settings);
   } else ui.close();
 }
+function renderBuilder() {
+  let el = document.getElementById("builder-ui");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "builder-ui";
+    ui.root.append(el);
+  }
+  el.hidden = !world?.colony.buildMode;
+  el.innerHTML = world?.colony.buildMode ? builderPanel(world) : "";
+  ui.hud.hidden = !!world?.colony.buildMode;
+}
+function builderPointer(e: MouseEvent) {
+  if (!world?.colony.buildMode) return;
+  const rect = document.querySelector("#game-frame")!.getBoundingClientRect();
+  world.colony.pointer = {
+    x: ((e.clientX - rect.left) * 1280) / rect.width,
+    y: ((e.clientY - rect.top) * 720) / rect.height,
+    inside: !(e.target as HTMLElement).closest("#builder-ui"),
+  };
+}
+window.addEventListener("mousemove", builderPointer);
+window.addEventListener("mousedown", (e) => {
+  if (
+    ui.modal ||
+    !world?.colony.buildMode ||
+    (e.target as HTMLElement).closest("#builder-ui")
+  )
+    return;
+  builderPointer(e);
+  const c = world.colony,
+    v = c.view;
+  if (e.button === 2) {
+    c.blueprint = null;
+    c.demolishing = false;
+    renderBuilder();
+    return;
+  }
+  if (e.button !== 0) return;
+  const x = v.x + c.pointer.x / v.zoom,
+    y = v.y + c.pointer.y / v.zoom;
+  if (c.blueprint && !c.demolishing) {
+    c.place(
+      c.blueprint,
+      Math.floor(x / GRID) * GRID,
+      GROUND - Math.round((GROUND - y) / GRID) * GRID,
+    );
+    renderBuilder();
+  } else {
+    const b = c.state.buildings.find(
+      (b) =>
+        x >= b.x &&
+        x <= b.x + definition(b.kind).w &&
+        y <= b.y &&
+        y >= b.y - definition(b.kind).h,
+    );
+    if (b) {
+      c.selected = b.id;
+      if (c.demolishing) {
+        c.demolish(b.id);
+        renderBuilder();
+      } else ui.action("cb-command");
+    }
+  }
+});
+window.addEventListener("contextmenu", (e) => {
+  if (world?.colony.buildMode) e.preventDefault();
+});
+window.addEventListener(
+  "wheel",
+  (e) => {
+    if (
+      !world?.colony.buildMode ||
+      (e.target as HTMLElement).closest("#builder-ui")
+    )
+      return;
+    e.preventDefault();
+    ui.action("cb-zoom", e.deltaY < 0 ? "in" : "out");
+  },
+  { passive: false },
+);
 ui.action = (action, value) => {
   audio.start();
   audio.play("ui");
@@ -105,6 +197,13 @@ ui.action = (action, value) => {
     )
       return;
     openModal(action as Exclude<Modal, null>);
+    return;
+  }
+  if (
+    world &&
+    colonyAction(world, ui, action, value, settings, renderBuilder)
+  ) {
+    input.clear();
     return;
   }
   if (world && survivalAction(world, ui, action, value, settings)) {
@@ -288,19 +387,36 @@ ui.setting = (key, value) => {
 input.onMenu = (key) => {
   audio.start();
   if (mode !== "game" || !world || world.dead > 0) return;
+  if (key === "KeyB") {
+    ui.action(world.colony.buildMode ? "cb-exit" : "cb-build");
+    return;
+  }
+  if (world.colony.buildMode) {
+    if (key === "Escape") {
+      ui.action("cb-exit");
+      return;
+    }
+    if (key === "KeyO") {
+      ui.action("cb-command");
+      return;
+    }
+    return;
+  }
   if (key === "KeyN") ui.hubTab = "codex";
   const target =
-    key === "KeyB" || key === "KeyN"
+    key === "KeyL" || key === "KeyN"
       ? "hub"
-      : key === "KeyI"
-        ? "inventory"
-        : key === "KeyM"
-          ? "map"
-          : key === "KeyC"
-            ? "character"
-            : key === "KeyV"
-              ? "skills"
-              : "pause";
+      : key === "KeyO"
+        ? "colony"
+        : key === "KeyI"
+          ? "inventory"
+          : key === "KeyM"
+            ? "map"
+            : key === "KeyC"
+              ? "character"
+              : key === "KeyV"
+                ? "skills"
+                : "pause";
   if (ui.modal) closeModal();
   else openModal(target);
 };
@@ -378,7 +494,27 @@ class ExpeditionScene extends Phaser.Scene {
       )
         startGame();
     } else if (world) {
-      if (!ui.modal) {
+      if (world.colony.buildMode) {
+        world.colony.tick(dt);
+        world.survival.production.tick(dt);
+        const c = world.colony,
+          v = c.view,
+          speed = (650 * dt) / v.zoom;
+        if (
+          input.held.has("ArrowLeft") ||
+          (c.pointer.inside && c.pointer.x < 300)
+        )
+          v.x -= speed;
+        if (
+          input.held.has("ArrowRight") ||
+          (c.pointer.inside && c.pointer.x > 1240)
+        )
+          v.x += speed;
+        if (input.held.has("ArrowUp")) v.y -= speed;
+        if (input.held.has("ArrowDown")) v.y += speed;
+        v.x = Math.max(0, Math.min(BASE_END - 1280 / v.zoom, v.x));
+        if (input.pressed.has("KeyX")) ui.action("cb-demolition");
+      } else if (!ui.modal) {
         world.update(dt, input.frame());
         stepTime += dt;
         if (
@@ -390,7 +526,23 @@ class ExpeditionScene extends Phaser.Scene {
           audio.play("step");
         }
       }
-      if (ui.modal) world.survival.production.tick(dt);
+      if (
+        ui.modal &&
+        ui.modal !== "pause" &&
+        ui.modal !== "settings" &&
+        ui.modal !== "controls"
+      ) {
+        if (!world.colony.siege) world.colony.tick(dt);
+        world.survival.production.tick(dt);
+      }
+      if (
+        ui.modal === "colony" &&
+        Math.floor(ambientTime * 2) !== Math.floor((ambientTime - dt) * 2)
+      ) {
+        const m = document.getElementById("colony-metrics");
+        if (m) m.innerHTML = colonyMetrics(world);
+        refreshColonyStatus(world);
+      }
       if (
         ui.modal === "hub" &&
         Math.floor(ambientTime * 2) !== Math.floor((ambientTime - dt) * 2)
@@ -400,8 +552,11 @@ class ExpeditionScene extends Phaser.Scene {
       }
       for (const event of world.events.splice(0)) {
         if (event.type === "facility") {
-          ui.hubTab = facilityTab(event.text);
-          openModal("hub");
+          if (event.text === "colony") openModal("colony");
+          else {
+            ui.hubTab = facilityTab(event.text);
+            openModal("hub");
+          }
         }
         if (event.type === "toast") ui.toast(event.text);
         if (event.type === "sound") audio.play(event.text);
@@ -416,10 +571,12 @@ class ExpeditionScene extends Phaser.Scene {
           ? "boss" + world.combat.boss.phase
           : world.region,
       );
-      art.world(c, world, settings.effects === "low");
+      if (world.colony.buildMode) builderArt(c, world);
+      else art.world(c, world, settings.effects === "low");
       hudClock += dt;
       if (hudClock > 0.1) {
         ui.update(world);
+        ui.hud.hidden = world.colony.buildMode;
         hudClock = 0;
       }
     }

@@ -1,3 +1,4 @@
+import { colonyPanel } from "./colony-ui";
 import {
   survivalHud,
   survivalHub,
@@ -30,6 +31,7 @@ import {
 } from "./battle-ui";
 import { gearTemplates, rarities } from "../data/battle";
 export type Modal =
+  | "colony"
   | "hub"
   | "character"
   | "skills"
@@ -106,7 +108,7 @@ export class Interface {
     this.hud.hidden = true;
     this.screen.hidden = false;
     this.close();
-    this.screen.innerHTML = `<section class="title-screen"><div class="brand-top"><span class="orbit-mark">✧</span> INTERSTELLAR EXPLORATION PROGRAM <span class="phase-tag">PHASE 03</span></div><div class="title-copy"><p class="eyebrow">SURVIVAL PROTOCOL</p><h1>ASTRO<span>TOPIA</span></h1><p class="tagline">SURVIVE. ADAPT. EVOLVE.</p><p class="title-description">낯선 별에 남기는, 당신의 첫 번째 발자국.<br>아무도 기록하지 않은 세계가 기다립니다.</p></div><nav class="main-menu" aria-label="메인 메뉴"><button class="primary start" data-action="new"><span class="button-glyph">✦</span>${ko.newGame}<span class="button-end">NEW EXPEDITION</span></button><button class="continue" data-action="continue" ${canContinue ? "" : "disabled"}><span class="button-glyph">⌁</span>${ko.continue}<span class="button-end">${canContinue ? "RESUME EXPEDITION" : "저장된 탐험 없음"}</span></button><div class="menu-links"><button data-action="settings">${ko.settings}</button><span></span><button data-action="controls">${ko.controls}</button><span></span><button data-action="credits">${ko.credits}</button></div></nav><div class="planet-label"><span class="crosshair">+</span><p>DESTINATION 001</p><h2>EDEN</h2><div>미탐사 생명체 행성</div><dl><dt>중력</dt><dd>0.9 G</dd><dt>대기</dt><dd>호흡 가능</dd></dl></div><footer class="title-footer"><span><i></i> EXPLORATION SYSTEMS ONLINE</span><span>2478 CE <b> / </b> PROJECT ASTROTOPIA</span><span>키보드 · PC 브라우저 권장</span></footer>${error ? `<p class="storage-error">${escape(error)}</p>` : ""}</section>`;
+    this.screen.innerHTML = `<section class="title-screen"><div class="brand-top"><span class="orbit-mark">✧</span> INTERSTELLAR EXPLORATION PROGRAM <span class="phase-tag">PHASE 04</span></div><div class="title-copy"><p class="eyebrow">COLONY RISING</p><h1>ASTRO<span>TOPIA</span></h1><p class="tagline">FROM SURVIVOR TO PIONEER.</p><p class="title-description">낯선 별에 남기는, 당신의 첫 번째 발자국.<br>아무도 기록하지 않은 세계가 기다립니다.</p></div><nav class="main-menu" aria-label="메인 메뉴"><button class="primary start" data-action="new"><span class="button-glyph">✦</span>${ko.newGame}<span class="button-end">NEW EXPEDITION</span></button><button class="continue" data-action="continue" ${canContinue ? "" : "disabled"}><span class="button-glyph">⌁</span>${ko.continue}<span class="button-end">${canContinue ? "RESUME EXPEDITION" : "저장된 탐험 없음"}</span></button><div class="menu-links"><button data-action="settings">${ko.settings}</button><span></span><button data-action="controls">${ko.controls}</button><span></span><button data-action="credits">${ko.credits}</button></div></nav><div class="planet-label"><span class="crosshair">+</span><p>DESTINATION 001</p><h2>EDEN</h2><div>미탐사 생명체 행성</div><dl><dt>중력</dt><dd>0.9 G</dd><dt>대기</dt><dd>호흡 가능</dd></dl></div><footer class="title-footer"><span><i></i> EXPLORATION SYSTEMS ONLINE</span><span>2478 CE <b> / </b> PROJECT ASTROTOPIA</span><span>키보드 · PC 브라우저 권장</span></footer>${error ? `<p class="storage-error">${escape(error)}</p>` : ""}</section>`;
   }
   game() {
     this.screen.hidden = true;
@@ -163,6 +165,11 @@ export class Interface {
       eyebrow = "SYSTEM CONFIGURATION";
       content = `<div class="settings-grid"><label for="music">배경음</label><input id="music" aria-label="배경음" type="range" min="0" max="1" step="0.05" value="${s.music}" data-setting="music"><label for="sfx">효과음</label><input id="sfx" aria-label="효과음" type="range" min="0" max="1" step="0.05" value="${s.sfx}" data-setting="sfx"><label for="effects">그래픽 효과</label><select id="effects" data-setting="effects"><option value="high" ${s.effects === "high" ? "selected" : ""}>높음</option><option value="low" ${s.effects === "low" ? "selected" : ""}>낮음 · 입자 및 전경 감소</option></select></div><button class="wide" data-action="fullscreen">전체 화면 전환</button><p class="muted">설정은 자동으로 이 브라우저에 저장됩니다.</p>`;
     }
+    if (modal === "colony" && w) {
+      heading = "기지 관제 센터";
+      eyebrow = "COLONY COMMAND CENTER";
+      content = colonyPanel(w);
+    }
     if (modal === "hub" && w) {
       heading = "개척자의 작업실";
       eyebrow = "SURVIVAL & TECHNOLOGY";
@@ -217,9 +224,15 @@ export class Interface {
     }
     if (modal === "ending" && w && w.progress.quest >= 18) {
       heading = "개척의 가능성";
-      eyebrow = "SURVIVAL PROTOCOL · COMPLETE";
+      eyebrow = "COLONY RISING · COMPLETE";
       content =
-        '<div class="ending-glyph">⌬</div><blockquote>이제 우리는 단순한 생존자가 아니다. 이 세계에 새로운 문명을 건설할 준비가 되었다.</blockquote><p>기지 건설 설계도를 확보했습니다. 자유 건설은 Phase 4에서 이어집니다.</p><button class="primary wide" data-action="close">탐험 계속하기</button>';
+        '<div class="ending-glyph">⌬</div><blockquote>이제 우리는 단순한 생존자가 아니다. 이 세계에 새로운 문명을 건설할 준비가 되었다.</blockquote><p>기지 건설 설계도를 확보했습니다. B로 건설 모드를 열고 O에서 기지를 관리하세요.</p><button class="primary wide" data-action="close">탐험 계속하기</button>';
+    }
+    if (modal === "ending" && w && w.progress.quest >= 28) {
+      heading = "첫 번째 집, 다음 세계";
+      eyebrow = "COLONY RISING / COMPLETE";
+      content =
+        '<div class="ending-glyph">⌬</div><blockquote>우리는 이 세계에 첫 번째 집을 세웠다.<br>이제 별들 사이의 다음 세계가 우리를 기다린다.</blockquote><p>우주선 수리 준비와 성계 항법 연구를 완료했습니다. 실제 발사는 다음 단계에서 이어집니다.</p><button class="primary wide" data-action="close">기지 운영 계속하기</button>';
     }
     if (modal === "inventory" && w) {
       heading = "탐험가의 보관함";
@@ -251,7 +264,7 @@ export class Interface {
     if (modal === "pause" && w?.survival.sentinel.active)
       content +=
         '<button data-action="sentinel-leave">파수꾼 전투 이탈</button>';
-    this.dialog.innerHTML = `<section class="modal ${modal === "hub" || modal === "inventory" || modal === "map" || modal === "character" || modal === "skills" ? "large" : ""}" role="dialog" aria-modal="true" aria-labelledby="modal-heading"><button class="close" data-action="close" aria-label="닫기">×</button><p class="eyebrow">${eyebrow}</p><h2 id="modal-heading">${heading}</h2>${content}</section>`;
+    this.dialog.innerHTML = `<section class="modal ${modal === "colony" || modal === "hub" || modal === "inventory" || modal === "map" || modal === "character" || modal === "skills" ? "large" : ""}" role="dialog" aria-modal="true" aria-labelledby="modal-heading"><button class="close" data-action="close" aria-label="닫기">×</button><p class="eyebrow">${eyebrow}</p><h2 id="modal-heading">${heading}</h2>${content}</section>`;
     this.screen.inert = true;
     this.hud.inert = true;
     this.dialog

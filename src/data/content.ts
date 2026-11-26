@@ -1,3 +1,4 @@
+import { colonyItems, colonyQuests, type PartId } from "../colony/catalog";
 import { extraItems, type NewItemId } from "../survival/catalog";
 import {
   frontierRegions,
@@ -9,6 +10,7 @@ import {
 import type { Element, EliteAffix } from "../combat/types";
 export type RegionId = FrontierRegion | "crash" | "forest" | "valley";
 export type ItemId =
+  | PartId
   | NewItemId
   | "iron"
   | "copper"
@@ -159,6 +161,7 @@ export const items: Record<
   }
 > = {
   ...extraItems,
+  ...colonyItems,
   fragment: {
     name: "수정 파편",
     type: "부품",
@@ -707,6 +710,7 @@ export const questData = [
     xp: 250,
   },
   ...frontierQuests,
+  ...colonyQuests,
 ] as const;
 export const opening = [
   [

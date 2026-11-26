@@ -1,3 +1,5 @@
+import { newColony } from "../colony/types";
+import { validColony, savedColonyCapacity } from "./colony-schema";
 import { newSurvival } from "../survival/types";
 import { validSurvival } from "./survival-schema";
 import { items, regionOrder, regions, type ItemId } from "../data/content";
@@ -45,7 +47,7 @@ export function parseSave(raw: string | null): SaveData | null {
     const s = JSON.parse(raw);
     if (
       !object(s) ||
-      ![1, 2, 3].includes(Number(s.version)) ||
+      ![1, 2, 3, 4].includes(Number(s.version)) ||
       !regionOrder.includes(s.region as never) ||
       !finite(s.savedAt, 0, 1e15) ||
       !finite(s.level, 1, 15) ||
@@ -53,7 +55,7 @@ export function parseSave(raw: string | null): SaveData | null {
     )
       return null;
     if (
-      !finite(s.x, 0, 5200) ||
+      !finite(s.x, 0, s.version === 4 ? 10000 : 5200) ||
       !finite(s.y, -100, 1000) ||
       !finite(s.xp, 0, xpRequired(s.level)) ||
       !finite(s.hp, 0, 1000) ||
@@ -65,10 +67,10 @@ export function parseSave(raw: string | null): SaveData | null {
       Object.entries(s.inventory).some(
         ([id, n]) =>
           !Object.hasOwn(items, id) ||
-          !finite(n, 0, s.version === 3 ? 3564 : 2376) ||
+          !finite(n, 0, Number(s.version) >= 3 ? 3564 : 2376) ||
           !Number.isInteger(n),
       ) ||
-      occupiedSlots(s.inventory) > (s.version === 3 ? 36 : 24)
+      occupiedSlots(s.inventory) > (Number(s.version) >= 3 ? 36 : 24)
     )
       return null;
     const p = s.progress;
@@ -81,16 +83,21 @@ export function parseSave(raw: string | null): SaveData | null {
     )
       return null;
     if (
-      !finite(p.quest, 0, s.version === 1 ? 4 : s.version === 2 ? 10 : 18) ||
+      !finite(
+        p.quest,
+        0,
+        s.version === 1 ? 4 : s.version === 2 ? 10 : s.version === 3 ? 18 : 28,
+      ) ||
       !Number.isInteger(p.quest) ||
       !Array.isArray(p.discovered) ||
       p.discovered.some((r) => !regionOrder.includes(r)) ||
       p.discovered.length > 7
     )
       return null;
-    const landmarkIds = Object.values(regions).flatMap((r) =>
-      r.landmarks.map((l) => l.id),
-    );
+    const landmarkIds = [
+      "colony-forest",
+      ...Object.values(regions).flatMap((r) => r.landmarks.map((l) => l.id)),
+    ];
     if (
       !Array.isArray(p.opened) ||
       p.opened.length > 60 ||
@@ -113,7 +120,15 @@ export function parseSave(raw: string | null): SaveData | null {
       s.survival = newSurvival();
       s.version = 3;
     }
-    if (!validSurvival(s.survival)) return null;
+    if (s.version === 3) {
+      s.colony = newColony();
+      s.version = 4;
+    }
+    if (
+      !validColony(s.colony) ||
+      !validSurvival(s.survival, savedColonyCapacity(s.colony))
+    )
+      return null;
     if (
       !validSettings(s.settings) ||
       !validBattle(s.battle) ||
@@ -168,10 +183,15 @@ export class SaveStore {
       if (previous) {
         try {
           if (
-            JSON.parse(previous).version === 2 &&
-            !this.storage.getItem(SAVE_KEY + ".backup.v2")
+            [2, 3].includes(JSON.parse(previous).version) &&
+            !this.storage.getItem(
+              SAVE_KEY + ".backup.v" + JSON.parse(previous).version,
+            )
           )
-            this.storage.setItem(SAVE_KEY + ".backup.v2", previous);
+            this.storage.setItem(
+              SAVE_KEY + ".backup.v" + JSON.parse(previous).version,
+              previous,
+            );
         } catch {}
       }
       this.storage.setItem(SAVE_KEY, JSON.stringify(data));

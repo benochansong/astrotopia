@@ -1,3 +1,5 @@
+import { ColonySystem } from "../colony/ColonySystem";
+import { BASE_END } from "../colony/catalog";
 import { environments, regionEnvironment } from "../survival/catalog";
 import { SurvivalSystem } from "../survival/SurvivalSystem";
 import {
@@ -72,6 +74,7 @@ export class World {
   settings = defaultSettings();
   combat = new CombatSystem(this);
   survival = new SurvivalSystem(this);
+  colony = new ColonySystem(this);
   get stats() {
     const stats = EquipmentSystem.stats(this.player.level, this.battle);
     stats.defense += this.survival.resistance.defense;
@@ -131,6 +134,7 @@ export class World {
   private moved = false;
   constructor(save?: SaveData) {
     if (save) {
+      this.colony.state = structuredClone(save.colony);
       this.battle = structuredClone(save.battle);
       this.survival.state = structuredClone(save.survival);
       this.cooldowns = { ...save.survival.miningCooldowns };
@@ -152,12 +156,15 @@ export class World {
         this.player.hp = this.stats.hp;
         this.player.invulnerable = 4;
       }
+      this.colony.invalidate();
       this.ensureSafePosition();
     }
     this.safe = { x: this.player.x, y: this.player.y };
     this.spawnEnemies();
     this.combat.unlock();
-    this.survival.production.offline();
+    this.colony.initialize();
+    this.colony.offline();
+    if (!this.colony.state.enabled) this.survival.production.offline();
     if (!["crash", "forest", "valley"].includes(this.region)) {
       this.player.x = this.map.spawn;
       this.player.y = 716;
@@ -167,7 +174,25 @@ export class World {
     this.camera.x = Math.max(0, this.player.x - 500);
   }
   get map() {
-    return regions[this.region];
+    const map = regions[this.region];
+    if (this.region === "crash" && this.colony.unlocked)
+      return {
+        ...map,
+        width: BASE_END + 240,
+        platforms: [...map.platforms, ...this.colony.platforms],
+        landmarks: [
+          ...map.landmarks,
+          {
+            id: "colony-forest",
+            kind: "portal" as const,
+            x: 3100,
+            y: 780,
+            label: "발광 숲으로 이동",
+            target: "forest" as const,
+          },
+        ],
+      };
+    return map;
   }
   emit(type: WorldEvent["type"], text: string) {
     this.events.push({ type, text });
@@ -212,7 +237,8 @@ export class World {
       if (
         this.progress.quest === 4 ||
         this.progress.quest === 10 ||
-        this.progress.quest === 18
+        this.progress.quest === 18 ||
+        this.progress.quest === 28
       )
         this.emit(
           "ending",
@@ -398,6 +424,19 @@ export class World {
       .sort((a, b) => Math.abs(a.x - cx) - Math.abs(b.x - cx))[0];
   }
   interact() {
+    if (this.region === "crash" && this.colony.state.enabled) {
+      const b = this.colony.state.buildings.find(
+        (b) =>
+          !b.legacy &&
+          Math.abs(b.x + 60 - this.player.x) < 100 &&
+          Math.abs(b.y - this.player.y - 64) < 100,
+      );
+      if (b) {
+        this.colony.selected = b.id;
+        this.emit("facility", "colony");
+        return;
+      }
+    }
     if (this.mining) return;
     const target = this.nearby();
     if (!target) return;
@@ -507,6 +546,7 @@ export class World {
   update(dt: number, input: InputFrame) {
     dt = Math.min(dt, 0.1);
     this.time += dt;
+    this.colony.tick(dt);
     this.survival.production.tick(dt);
     this.transition = Math.max(0, this.transition - dt);
     this.regionNotice = Math.max(0, this.regionNotice - dt);
@@ -623,7 +663,11 @@ export class World {
     this.camera.x += (targetX - this.camera.x) * ease;
     this.camera.y += (targetY - this.camera.y) * ease;
     const index = regionOrder.indexOf(this.region);
-    if (p.x > this.map.width - p.w - 5 && index < 2)
+    if (
+      p.x > this.map.width - p.w - 5 &&
+      index < 2 &&
+      !(index === 0 && this.colony.unlocked)
+    )
       this.enterRegion(regionOrder[index + 1]);
     else if (p.x < 3 && index > 0 && index < 3)
       this.enterRegion(
@@ -656,7 +700,8 @@ export class World {
   }
   snapshot(settings: Settings): SaveData {
     return {
-      version: 3,
+      version: 4,
+      colony: structuredClone(this.colony.state),
       survival: {
         ...structuredClone(this.survival.state),
         miningCooldowns: { ...this.cooldowns },

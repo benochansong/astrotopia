@@ -16,7 +16,10 @@ const array = (v: unknown, valid: (x: any) => boolean, max = 100) =>
   v.length <= max &&
   v.every(valid) &&
   new Set(v).size === v.length;
-export function validSurvival(s: unknown): s is SurvivalSave {
+export function validSurvival(
+  s: unknown,
+  warehouseCapacity = 60,
+): s is SurvivalSave {
   if (
     !obj(s) ||
     !num(s.oxygen, 300) ||
@@ -55,9 +58,11 @@ export function validSurvival(s: unknown): s is SurvivalSave {
     !obj(s.warehouse) ||
     Object.entries(s.warehouse).some(
       ([id, n]) =>
-        !Object.hasOwn(items, id) || !num(n, 5940) || !Number.isInteger(n),
+        !Object.hasOwn(items, id) ||
+        !num(n, warehouseCapacity * 99) ||
+        !Number.isInteger(n),
     ) ||
-    occupiedSlots(s.warehouse) > 60
+    occupiedSlots(s.warehouse) > warehouseCapacity
   )
     return false;
   if (

@@ -48,7 +48,7 @@ export class StorageSystem {
     to[id] = (to[id] ?? 0) + count;
     from[id] = (from[id] ?? 0) - count;
     if (
-      occupiedSlots(wh) > 60 ||
+      occupiedSlots(wh) > this.w.colony.capacity ||
       occupiedSlots(inv) + this.w.battle.gear.length > s.capacity
     ) {
       this.w.toast("보관 공간이 부족합니다.");

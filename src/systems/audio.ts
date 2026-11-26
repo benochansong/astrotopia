@@ -79,6 +79,10 @@ export class AudioSystem {
     g.connect(this.sfx);
     const t = c.currentTime;
     const sounds: Record<string, [number, number, number, OscillatorType]> = {
+      constructionStart: [140, 220, 0.25, "triangle"],
+      constructionComplete: [440, 880, 0.5, "sine"],
+      machine: [65, 80, 0.2, "sine"],
+      siegeAlarm: [330, 660, 0.9, "square"],
       mine1: [900, 400, 0.1, "triangle"],
       mine2: [1600, 700, 0.2, "sine"],
       mine3: [220, 70, 0.3, "sawtooth"],
@@ -134,7 +138,7 @@ export class AudioSystem {
     o.frequency.exponentialRampToValueAtTime(to, t + duration);
     g.gain.setValueAtTime(0.0001, t);
     g.gain.exponentialRampToValueAtTime(
-      name === "shoot" ? 0.045 : 0.065,
+      name === "machine" ? 0.012 : name === "shoot" ? 0.045 : 0.065,
       t + 0.008,
     );
     g.gain.exponentialRampToValueAtTime(0.0001, t + duration);

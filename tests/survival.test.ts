@@ -40,7 +40,7 @@ describe("Survival Protocol", () => {
     old.version = 2;
     delete old.survival;
     const s = parseSave(JSON.stringify(old))!;
-    expect(s.version).toBe(3);
+    expect(s.version).toBe(4);
     expect(s.progress.quest).toBe(10);
     expect(s.battle).toEqual(w.battle);
     expect(s.inventory.iron).toBe(10);
@@ -298,7 +298,7 @@ describe("Survival Protocol", () => {
     expect(w.survival.state.sentinelKills).toBe(2);
   });
   it("has complete connected regions and eight sequential quest definitions", () => {
-    expect(questData).toHaveLength(18);
+    expect(questData).toHaveLength(28);
     for (const id of ["marsh", "caverns", "ruins", "abyss"] as const) {
       expect(regions[id].resources.length).toBeGreaterThan(3);
       expect(regions[id].landmarks.some((l) => l.kind === "portal")).toBe(true);

@@ -27,9 +27,17 @@ export class Input {
         if (!e.repeat) {
           this.pressed.add(e.code);
           if (
-            ["Escape", "KeyI", "KeyM", "KeyC", "KeyV", "KeyB", "KeyN"].includes(
-              e.code,
-            )
+            [
+              "Escape",
+              "KeyI",
+              "KeyM",
+              "KeyC",
+              "KeyV",
+              "KeyB",
+              "KeyN",
+              "KeyL",
+              "KeyO",
+            ].includes(e.code)
           )
             this.onMenu(e.code);
         }

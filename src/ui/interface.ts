@@ -10,7 +10,17 @@ import { maxHp, xpRequired } from "../physics/movement";
 import { inventorySlots, occupiedSlots } from "../systems/inventory";
 import type { Settings } from "../core/types";
 import { ko } from "./strings";
+import {
+  battleControls,
+  battleHud,
+  characterPanel,
+  skillsPanel,
+  gearDetail,
+} from "./battle-ui";
+import { gearTemplates, rarities } from "../data/battle";
 export type Modal =
+  | "character"
+  | "skills"
   | "pause"
   | "settings"
   | "controls"
@@ -80,7 +90,7 @@ export class Interface {
     this.hud.hidden = true;
     this.screen.hidden = false;
     this.close();
-    this.screen.innerHTML = `<section class="title-screen"><div class="brand-top"><span class="orbit-mark">✧</span> INTERSTELLAR EXPLORATION PROGRAM <span class="phase-tag">PHASE 01</span></div><div class="title-copy"><p class="eyebrow">THE FIRST LANDING</p><h1>ASTRO<span>TOPIA</span></h1><p class="tagline">A NEW WORLD. A NEW BEGINNING.</p><p class="title-description">낯선 별에 남기는, 당신의 첫 번째 발자국.<br>아무도 기록하지 않은 세계가 기다립니다.</p></div><nav class="main-menu" aria-label="메인 메뉴"><button class="primary start" data-action="new"><span class="button-glyph">✦</span>${ko.newGame}<span class="button-end">NEW EXPEDITION</span></button><button class="continue" data-action="continue" ${canContinue ? "" : "disabled"}><span class="button-glyph">⌁</span>${ko.continue}<span class="button-end">${canContinue ? "RESUME EXPEDITION" : "저장된 탐험 없음"}</span></button><div class="menu-links"><button data-action="settings">${ko.settings}</button><span></span><button data-action="controls">${ko.controls}</button><span></span><button data-action="credits">${ko.credits}</button></div></nav><div class="planet-label"><span class="crosshair">+</span><p>DESTINATION 001</p><h2>EDEN</h2><div>미탐사 생명체 행성</div><dl><dt>중력</dt><dd>0.9 G</dd><dt>대기</dt><dd>호흡 가능</dd></dl></div><footer class="title-footer"><span><i></i> EXPLORATION SYSTEMS ONLINE</span><span>2478 CE <b> / </b> PROJECT ASTROTOPIA</span><span>키보드 · PC 브라우저 권장</span></footer>${error ? `<p class="storage-error">${escape(error)}</p>` : ""}</section>`;
+    this.screen.innerHTML = `<section class="title-screen"><div class="brand-top"><span class="orbit-mark">✧</span> INTERSTELLAR EXPLORATION PROGRAM <span class="phase-tag">PHASE 02</span></div><div class="title-copy"><p class="eyebrow">BATTLE EVOLUTION</p><h1>ASTRO<span>TOPIA</span></h1><p class="tagline">A NEW WORLD. A NEW BEGINNING.</p><p class="title-description">낯선 별에 남기는, 당신의 첫 번째 발자국.<br>아무도 기록하지 않은 세계가 기다립니다.</p></div><nav class="main-menu" aria-label="메인 메뉴"><button class="primary start" data-action="new"><span class="button-glyph">✦</span>${ko.newGame}<span class="button-end">NEW EXPEDITION</span></button><button class="continue" data-action="continue" ${canContinue ? "" : "disabled"}><span class="button-glyph">⌁</span>${ko.continue}<span class="button-end">${canContinue ? "RESUME EXPEDITION" : "저장된 탐험 없음"}</span></button><div class="menu-links"><button data-action="settings">${ko.settings}</button><span></span><button data-action="controls">${ko.controls}</button><span></span><button data-action="credits">${ko.credits}</button></div></nav><div class="planet-label"><span class="crosshair">+</span><p>DESTINATION 001</p><h2>EDEN</h2><div>미탐사 생명체 행성</div><dl><dt>중력</dt><dd>0.9 G</dd><dt>대기</dt><dd>호흡 가능</dd></dl></div><footer class="title-footer"><span><i></i> EXPLORATION SYSTEMS ONLINE</span><span>2478 CE <b> / </b> PROJECT ASTROTOPIA</span><span>키보드 · PC 브라우저 권장</span></footer>${error ? `<p class="storage-error">${escape(error)}</p>` : ""}</section>`;
   }
   game() {
     this.screen.hidden = true;
@@ -97,10 +107,10 @@ export class Interface {
     if (this.hud.hidden) return;
     const p = w.player,
       q = questData[w.progress.quest],
-      hp = Math.max(0, (p.hp / maxHp(p.level)) * 100),
+      hp = Math.max(0, (p.hp / w.stats.hp) * 100),
       xp = p.level === 15 ? 100 : (p.xp / xpRequired(p.level)) * 100;
     const nearby = w.nearby();
-    const html = `<div class="player-panel glass"><div class="portrait">${portrait}<span>${p.level}</span></div><div class="vitals"><div class="player-heading">EXPLORER <small>탐험가</small></div><div class="stat-line"><span>HP</span><div class="bar health"><i style="width:${hp}%"></i></div><b>${Math.ceil(p.hp)}<small> / ${maxHp(p.level)}</small></b></div><div class="stat-line"><span>EN</span><div class="bar energy"><i style="width:${p.energy}%"></i></div><b>${Math.floor(p.energy)}<small> / 100</small></b></div></div></div><div class="location glass"><div class="location-top"><span>✧ EDEN</span><button aria-label="일시정지" title="일시정지 (ESC)" data-action="pause">Ⅱ</button></div><strong>${w.map.name}</strong><small>${w.map.en}</small><div class="environment"><span>0.9 G</span><span>O₂ 호흡 가능</span></div><button class="minimap" aria-label="지역 지도 열기" data-action="map">${this.minimap(w)}<span>M · 지역 지도</span></button></div><aside class="quest-panel"><p class="eyebrow">${q ? `MISSION ${String(w.progress.quest + 1).padStart(2, "0")}` : "EXPEDITION LOG"}</p><h3>${q ? q.name : "계속되는 모험"}</h3>${
+    const html = `<div class="player-panel glass"><div class="portrait">${portrait}<span>${p.level}</span></div><div class="vitals"><div class="player-heading">EXPLORER <small>탐험가</small></div><div class="stat-line"><span>HP</span><div class="bar health"><i style="width:${hp}%"></i></div><b>${Math.ceil(p.hp)}<small> / ${w.stats.hp}</small></b></div><div class="stat-line"><span>EN</span><div class="bar energy"><i style="width:${(100 * p.energy) / w.stats.energy}%"></i></div><b>${Math.floor(p.energy)}<small> / ${Math.round(w.stats.energy)}</small></b></div></div></div><div class="location glass"><div class="location-top"><span>✧ EDEN</span><button aria-label="일시정지" title="일시정지 (ESC)" data-action="pause">Ⅱ</button></div><strong>${w.combat.zone.name}</strong><small>${w.map.en}</small><div class="environment"><span>0.9 G</span><span>Lv.${w.combat.zone.level} · O₂</span></div><button class="minimap" aria-label="지역 지도 열기" data-action="map">${this.minimap(w)}<span>M · 지역 지도</span></button></div><aside class="quest-panel"><p class="eyebrow">${q ? `MISSION ${String(w.progress.quest + 1).padStart(2, "0")}` : "EXPEDITION LOG"}</p><h3>${q ? q.name : "계속되는 모험"}</h3>${
       q
         ? `<p>${q.story}</p><ul>${q.goals
             .map(([id, label, n]) => {
@@ -109,10 +119,11 @@ export class Interface {
             })
             .join("")}</ul>`
         : "<p>고대의 신호를 기록했습니다.<br>EDEN을 자유롭게 탐험하세요.</p>"
-    }</aside><div class="bottom-hud"><div class="quickbar"><div><kbd>J</kbd><span class="slot-symbol">⌁</span><span>펄스 블래스터</span></div><div class="${p.dashCooldown > 0 ? "cooldown" : ""}"><kbd>SHIFT</kbd><span class="slot-symbol">»</span><span>${p.dashCooldown > 0 ? p.dashCooldown.toFixed(1) + "s" : "대시"}</span></div><button data-action="heal"><kbd>H</kbd><span class="slot-symbol">✚</span><span>회복 키트 <b>${w.inventory.medkit ?? 0}</b></span></button><button data-action="inventory"><kbd>I</kbd><span class="slot-symbol">▦</span><span>인벤토리</span></button><button data-action="map"><kbd>M</kbd><span class="slot-symbol">⌖</span><span>지도</span></button></div><div class="experience"><span>LV. ${p.level}</span><div><i style="width:${xp}%"></i></div><span>${p.level === 15 ? "MAX LEVEL" : `${p.xp} / ${xpRequired(p.level)} XP`}</span></div></div><div class="world-hint">${w.region === "crash" && !w.progress.counters.move ? "<kbd>A</kbd><kbd>D</kbd> 이동 <span>·</span> <kbd>SPACE</kbd> 점프" : w.region === "valley" ? "협곡 주의 · 점프 중 SHIFT로 긴 거리를 건너세요." : ""}</div>${nearby ? `<div class="interaction" style="left:${Math.max(110, Math.min(1170, nearby.x - w.camera.x))}px;top:${Math.max(150, Math.min(590, nearby.y - w.camera.y - 110))}px"><kbd>F</kbd> ${w.mining ? "채집 중…" : nearby.label}</div>` : ""}${w.regionNotice > 0 ? `<div class="region-notice"><span>PLANET EDEN / REGION 0${regionOrder.indexOf(w.region) + 1}</span><h2>${w.map.name}</h2><p>${w.map.subtitle}</p></div>` : ""}${w.dead > 0 ? '<div class="death-screen"><p class="eyebrow">EXPLORATION INTERRUPTED</p><h2>탐험 신호가 끊어졌습니다</h2><p>회복 지점으로 귀환 중 · 자원과 경험치 유지</p></div>' : ""}`;
-    if (this.lastHud !== html) {
-      this.hud.innerHTML = html;
-      this.lastHud = html;
+    }</aside><div class="bottom-hud">${battleControls(w)}<div class="experience"><span>LV. ${p.level}</span><div><i style="width:${xp}%"></i></div><span>${p.level === 15 ? "MAX LEVEL" : `${p.xp} / ${xpRequired(p.level)} XP`}</span></div></div><div class="world-hint">${w.region === "crash" && !w.progress.counters.move ? "<kbd>A</kbd><kbd>D</kbd> 이동 <span>·</span> <kbd>SPACE</kbd> 점프" : w.region === "valley" ? "협곡 주의 · 점프 중 SHIFT로 긴 거리를 건너세요." : ""}</div>${nearby ? `<div class="interaction" style="left:${Math.max(110, Math.min(1170, nearby.x - w.camera.x))}px;top:${Math.max(150, Math.min(590, nearby.y - w.camera.y - 110))}px"><kbd>F</kbd> ${w.mining ? "채집 중…" : nearby.label}</div>` : ""}${w.regionNotice > 0 ? `<div class="region-notice"><span>PLANET EDEN / REGION 0${regionOrder.indexOf(w.region) + 1}</span><h2>${w.map.name}</h2><p>${w.map.subtitle}</p></div>` : ""}${w.dead > 0 ? '<div class="death-screen"><p class="eyebrow">EXPLORATION INTERRUPTED</p><h2>탐험 신호가 끊어졌습니다</h2><p>회복 지점으로 귀환 중 · 자원과 경험치 유지</p></div>' : ""}`;
+    const finalHtml = html + battleHud(w);
+    if (this.lastHud !== finalHtml) {
+      this.hud.innerHTML = finalHtml;
+      this.lastHud = finalHtml;
     }
   }
   minimap(w: World) {
@@ -136,6 +147,24 @@ export class Interface {
       eyebrow = "SYSTEM CONFIGURATION";
       content = `<div class="settings-grid"><label for="music">배경음</label><input id="music" aria-label="배경음" type="range" min="0" max="1" step="0.05" value="${s.music}" data-setting="music"><label for="sfx">효과음</label><input id="sfx" aria-label="효과음" type="range" min="0" max="1" step="0.05" value="${s.sfx}" data-setting="sfx"><label for="effects">그래픽 효과</label><select id="effects" data-setting="effects"><option value="high" ${s.effects === "high" ? "selected" : ""}>높음</option><option value="low" ${s.effects === "low" ? "selected" : ""}>낮음 · 입자 및 전경 감소</option></select></div><button class="wide" data-action="fullscreen">전체 화면 전환</button><p class="muted">설정은 자동으로 이 브라우저에 저장됩니다.</p>`;
     }
+    if (modal === "character" && w) {
+      heading = "탐험가 · 장비와 성장";
+      eyebrow = "EXPLORER LOADOUT";
+      content = characterPanel(w);
+    }
+    if (modal === "skills" && w) {
+      heading = "스킬 관리";
+      eyebrow = "COMBAT PROTOCOLS";
+      content = skillsPanel(w);
+    }
+    if (modal === "pause" && w?.combat.boss.active)
+      content +=
+        '<button class="wide" data-action="boss-leave">보스 전투 이탈 · 재도전 가능</button>';
+    if (modal === "settings")
+      content = content.replace(
+        '<button class="wide" data-action="fullscreen">',
+        `<div class="settings-grid"><label for="shake">화면 흔들림</label><input id="shake" data-setting="shake" type="range" min="0" max="1" step=".1" value="${s.shake}"><label for="damageNumbers">피해 숫자</label><select id="damageNumbers" data-setting="damageNumbers"><option value="true" ${s.damageNumbers ? "selected" : ""}>표시</option><option value="false" ${!s.damageNumbers ? "selected" : ""}>숨김</option></select><label for="difficulty">난이도</label><select id="difficulty" data-setting="difficulty"><option value="explorer" ${s.difficulty === "explorer" ? "selected" : ""}>탐험가</option><option value="normal" ${s.difficulty === "normal" ? "selected" : ""}>일반</option><option value="veteran" ${s.difficulty === "veteran" ? "selected" : ""}>베테랑</option></select></div><button class="wide" data-action="fullscreen">`,
+      );
     if (modal === "controls") {
       heading = "탐험가의 기본 조작";
       eyebrow = "EXPLORER FIELD GUIDE";
@@ -145,7 +174,7 @@ export class Interface {
       heading = "작은 발자국에서 시작된 세계";
       eyebrow = "PROJECT ASTROTOPIA";
       content =
-        '<p>기획 · ASTROTOPIA</p><p>게임 엔진 · Phaser 3<br>개발 · TypeScript / Vite<br>아트 · 자체 제작 절차적 벡터 그래픽<br>사운드 · Web Audio 합성</p><p class="muted">외부 상용 게임의 이미지, 캐릭터, 음악을 사용하지 않았습니다.<br>THE FIRST LANDING · DEVELOPMENT PHASE 01</p>';
+        '<p>기획 · ASTROTOPIA</p><p>게임 엔진 · Phaser 3<br>개발 · TypeScript / Vite<br>아트 · 자체 제작 절차적 벡터 그래픽<br>사운드 · Web Audio 합성</p><p class="muted">외부 상용 게임의 이미지, 캐릭터, 음악을 사용하지 않았습니다.<br>THE FIRST LANDING · DEVELOPMENT PHASE 02</p>';
     }
     if (modal === "confirm") {
       heading = "새로운 모험을 시작할까요?";
@@ -159,28 +188,39 @@ export class Interface {
       content =
         '<div class="ending-glyph">◇</div><blockquote>“이 행성에는 우리가 생각했던 것보다<br>훨씬 오래된 비밀이 존재한다.”</blockquote><p class="muted">고대의 문 너머로 희미한 에너지 신호가 흐릅니다.<br>첫 번째 탐험 기록이 완성되었습니다. 자유 탐험을 계속할 수 있습니다.</p><button class="primary wide" data-action="close">EDEN 탐험 계속하기</button>';
     }
+    if (modal === "ending" && w && w.progress.quest >= 10) {
+      heading = "새로운 개척의 시작";
+      eyebrow = "BATTLE EVOLUTION · COMPLETE";
+      content =
+        '<div class="ending-glyph">✦</div><blockquote>수호자의 코어에서 새로운 가능성을 발견했다.</blockquote><p>고대 문명의 에너지 변환 데이터를 확보했습니다. 정제·제작·생존 프로토콜을 구축할 차례입니다.</p><button class="primary wide" data-action="close">탐험 계속하기</button>';
+    }
     if (modal === "inventory" && w) {
       heading = "탐험가의 보관함";
-      eyebrow = `EXPLORER INVENTORY · ${occupiedSlots(w.inventory)} / 24`;
+      eyebrow = `EXPLORER INVENTORY · ${occupiedSlots(w.inventory) + w.battle.gear.length} / 24`;
       const slots = inventorySlots(w.inventory);
       content = `<div class="inventory-grid">${Array.from(
         { length: 24 },
         (_, i) => {
           const slot = slots[i];
-          if (!slot) return '<div class="item-slot empty"></div>';
+          if (!slot) {
+            const gear = w.battle.gear[i - slots.length];
+            if (gear)
+              return `<button class="item-slot" data-action="gear-open" data-value="${gear.id}"><span class="item-icon" style="color:${rarities[gear.rarity].color}">${gearTemplates[gear.template].icon}</span><span class="item-name">${gearTemplates[gear.template].name}</span></button>`;
+            return '<div class="item-slot empty"></div>';
+          }
           const item = items[slot.id];
           return `<button class="item-slot" data-action="item" data-value="${slot.id}" aria-label="${item.name} ${slot.count}개"><span class="item-icon" style="color:${item.color}">${item.icon}</span><span class="item-name">${item.name}</span><b>${slot.count}</b></button>`;
         },
       ).join(
         "",
-      )}</div><div id="item-detail" class="item-detail"><span>아이템을 선택하면 정보를 볼 수 있습니다.</span><small>동일 자원은 99개씩 중첩됩니다.</small></div><p class="muted">PULSE BLASTER 장착 중 · 제작과 장비 교체는 후속 단계에서 추가됩니다.</p>`;
+      )}</div><div id="item-detail" class="item-detail"><span>아이템을 선택하면 정보를 볼 수 있습니다.</span><small>동일 자원은 99개씩 중첩됩니다.</small></div><p class="muted">장비를 선택하거나 C를 누르면 착용·비교·판매할 수 있습니다.</p>`;
     }
     if (modal === "map" && w) {
       heading = "EDEN 탐사 지도";
       eyebrow = "PLANETARY SURVEY · 0.9 G";
       content = `<div class="map-regions">${regionOrder.map((id, i) => `<div class="map-region ${w.region === id ? "current" : ""} ${!w.progress.discovered.includes(id) ? "unexplored" : ""}"><span>REGION 0${i + 1}</span><div class="map-illustration ${id}">${id === "crash" ? "⌁" : id === "forest" ? "❧" : "◇"}</div><h3>${regions[id].name}</h3><small>${w.region === id ? "현재 위치" : w.progress.discovered.includes(id) ? "탐사 완료" : "미탐사"}</small></div>`).join('<div class="map-connector">···</div>')}</div><div class="large-map">${this.minimap(w)}</div><p class="muted">좌우 지역 경계를 걸어서 통과하면 다음 지역으로 이동합니다.<br>밝은 점: 탐험가 · 금색 점: 조사 및 회복 지점 · 선: 지형과 발판</p>`;
     }
-    this.dialog.innerHTML = `<section class="modal ${modal === "inventory" || modal === "map" ? "large" : ""}" role="dialog" aria-modal="true" aria-labelledby="modal-heading"><button class="close" data-action="close" aria-label="닫기">×</button><p class="eyebrow">${eyebrow}</p><h2 id="modal-heading">${heading}</h2>${content}</section>`;
+    this.dialog.innerHTML = `<section class="modal ${modal === "inventory" || modal === "map" || modal === "character" || modal === "skills" ? "large" : ""}" role="dialog" aria-modal="true" aria-labelledby="modal-heading"><button class="close" data-action="close" aria-label="닫기">×</button><p class="eyebrow">${eyebrow}</p><h2 id="modal-heading">${heading}</h2>${content}</section>`;
     this.screen.inert = true;
     this.hud.inert = true;
     this.dialog
@@ -188,6 +228,13 @@ export class Interface {
         modal === "confirm" ? '[data-action="close"]' : "button,input,select",
       )
       ?.focus();
+  }
+  gear(w: World, id: string, confirm = false) {
+    const el = this.dialog.querySelector("#gear-detail");
+    if (el) {
+      el.innerHTML = gearDetail(w, id, confirm);
+      el.scrollIntoView({ block: "nearest" });
+    }
   }
   detail(id: ItemId) {
     const el = this.dialog.querySelector("#item-detail");

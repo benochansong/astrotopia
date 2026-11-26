@@ -150,7 +150,7 @@ test("combat, all biomes, ending, death and revival integration", async ({
     page.getByRole("heading", { name: "오래된 별의 새로운 비밀" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "EDEN 탐험 계속하기" }).click();
-  await expect(page.locator(".quest-panel h3")).toHaveText("계속되는 모험");
+  await expect(page.locator(".quest-panel h3")).toHaveText("전투 준비");
   expect(errors).toEqual([]);
 });
 test("settings, confirmation, pause and corrupt-save recovery", async ({

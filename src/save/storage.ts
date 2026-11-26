@@ -2,12 +2,18 @@ import { items, regionOrder, regions, type ItemId } from "../data/content";
 import type { Progress, SaveData, Settings } from "../core/types";
 import { occupiedSlots } from "../systems/inventory";
 import { maxHp, xpRequired } from "../physics/movement";
+import { newBattle } from "../data/battle";
+import { validBattle } from "./battle-schema";
+import { EquipmentSystem } from "../combat/EquipmentSystem";
 export const SAVE_KEY = "astrotopia.save.v1";
 export const SETTINGS_KEY = "astrotopia.settings.v1";
 export const defaultSettings = (): Settings => ({
   music: 0.35,
   sfx: 0.6,
   effects: "high",
+  shake: 0.65,
+  damageNumbers: true,
+  difficulty: "normal",
 });
 export const newProgress = (): Progress => ({
   counters: {},
@@ -25,16 +31,19 @@ export function validSettings(s: unknown): s is Settings {
     object(s) &&
     finite(s.music, 0, 1) &&
     finite(s.sfx, 0, 1) &&
+    finite(s.shake, 0, 1) &&
+    typeof s.damageNumbers === "boolean" &&
+    ["explorer", "normal", "veteran"].includes(String(s.difficulty)) &&
     (s.effects === "high" || s.effects === "low")
   );
 }
 export function parseSave(raw: string | null): SaveData | null {
   try {
-    if (!raw || raw.length > 100000) return null;
+    if (!raw || raw.length > 2000000) return null;
     const s = JSON.parse(raw);
     if (
       !object(s) ||
-      s.version !== 1 ||
+      ![1, 2].includes(Number(s.version)) ||
       !regionOrder.includes(s.region as never) ||
       !finite(s.savedAt, 0, 1e15) ||
       !finite(s.level, 1, 15) ||
@@ -42,11 +51,11 @@ export function parseSave(raw: string | null): SaveData | null {
     )
       return null;
     if (
-      !finite(s.x, 0, 4000) ||
+      !finite(s.x, 0, 5200) ||
       !finite(s.y, -100, 1000) ||
       !finite(s.xp, 0, xpRequired(s.level)) ||
-      !finite(s.hp, 0, maxHp(s.level)) ||
-      !finite(s.energy, 0, 100)
+      !finite(s.hp, 0, 1000) ||
+      !finite(s.energy, 0, 1000)
     )
       return null;
     if (
@@ -70,7 +79,7 @@ export function parseSave(raw: string | null): SaveData | null {
     )
       return null;
     if (
-      !finite(p.quest, 0, 4) ||
+      !finite(p.quest, 0, s.version === 1 ? 4 : 10) ||
       !Number.isInteger(p.quest) ||
       !Array.isArray(p.discovered) ||
       p.discovered.some((r) => !regionOrder.includes(r)) ||
@@ -89,10 +98,28 @@ export function parseSave(raw: string | null): SaveData | null {
     if (
       !object(p.checkpoint) ||
       !regionOrder.includes(p.checkpoint.region as never) ||
-      !finite(p.checkpoint.x, 50, 3800) ||
-      !validSettings(s.settings)
+      !finite(p.checkpoint.x, 50, 5100)
     )
       return null;
+    if (s.version === 1) {
+      s.battle = newBattle(s.level);
+      if (!object(s.settings)) return null;
+      s.settings = { ...defaultSettings(), ...s.settings };
+      s.version = 2;
+    }
+    if (
+      !validSettings(s.settings) ||
+      !validBattle(s.battle) ||
+      occupiedSlots(s.inventory) + s.battle.gear.length > 24
+    )
+      return null;
+    const stats = EquipmentSystem.stats(s.level, s.battle);
+    if (Number(s.hp) > stats.hp || Number(s.energy) > stats.energy) return null;
+    // A boss encounter is never resumed mid-pattern; return to the staging area.
+    if (s.region === "valley" && Number(s.x) > 3990) {
+      s.x = 3820;
+      s.y = 716;
+    }
     return s as unknown as SaveData;
   } catch {
     return null;
@@ -122,6 +149,15 @@ export class SaveStore {
   }
   save(data: SaveData): boolean {
     try {
+      const previous = this.storage.getItem(SAVE_KEY);
+      let legacy = false;
+      try {
+        legacy = !!previous && JSON.parse(previous)?.version === 1;
+      } catch {
+        /* A confirmed new game may replace a corrupt save. */
+      }
+      if (legacy && !this.storage.getItem(SAVE_KEY + ".backup"))
+        this.storage.setItem(SAVE_KEY + ".backup", previous!);
       this.storage.setItem(SAVE_KEY, JSON.stringify(data));
       this.error = "";
       return true;
@@ -134,7 +170,8 @@ export class SaveStore {
   loadSettings(): Settings {
     try {
       const s = JSON.parse(this.storage.getItem(SETTINGS_KEY) ?? "null");
-      return validSettings(s) ? s : defaultSettings();
+      const merged = { ...defaultSettings(), ...(object(s) ? s : {}) };
+      return validSettings(merged) ? merged : defaultSettings();
     } catch {
       return defaultSettings();
     }

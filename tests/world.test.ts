@@ -170,7 +170,7 @@ describe("exploration, resources, combat and progression", () => {
     run(w, 2, { attack: true });
     expect(w.progress.counters.slime).toBeGreaterThanOrEqual(1);
     expect(w.player.xp).toBeGreaterThan(0);
-    const drop = w.drops[0];
+    const drop = w.battle.groundLoot.find((d) => d.item === "gel");
     if (drop) {
       settle(w, drop.x - 17);
       run(w, 0.5);
@@ -186,9 +186,9 @@ describe("exploration, resources, combat and progression", () => {
       w.player.y = e.y;
       w.player.invulnerable = 10;
       run(w, 0.01);
-      expect(e.state).toBe("Detect");
+      expect(e.state).toBe("Alert");
       run(w, 0.7);
-      expect(["Chase", "Attack"]).toContain(e.state);
+      expect(["Chase", "PrepareAttack", "Attack"]).toContain(e.state);
     }
   });
   it("applies invulnerability and restores a safe checkpoint without losing progress", () => {

@@ -1,6 +1,6 @@
 {
   "environment": "Windows / local Chrome / 1440x900 / high effects",
   "method": "5 second sample of actual Phaser display-canvas drawImage calls; one game image per frame",
-  "fps": 96.43085787447673,
-  "p95FrameMs": 13.100000001490116
+  "fps": 99.59720246084278,
+  "p95FrameMs": 13.5
 }

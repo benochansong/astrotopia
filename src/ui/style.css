@@ -1013,3 +1013,524 @@ blockquote {
     transition: none !important;
   }
 }
+/* Battle Evolution — equipment and combat overlays. */
+.bottom-hud {
+  width: 830px;
+  bottom: 16px;
+}
+.battle-quickbar {
+  display: grid;
+  grid-template-columns: 245px 1fr;
+  gap: 6px 12px;
+  padding: 9px 12px;
+  background: #092333ed;
+  border: 1px solid #9bbdbb55;
+  border-radius: 7px;
+}
+.weapon-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.weapon-quick button {
+  width: 116px;
+  padding: 8px 6px;
+  position: relative;
+  font-size: 11px;
+  min-height: 38px;
+}
+.weapon-quick button.selected {
+  border-color: #d6e8bb;
+  background: #54756845;
+}
+.weapon-quick kbd {
+  margin-right: 5px;
+  font-size: 9px;
+}
+.weapon-special {
+  font-size: 10px;
+  color: #bfd2c1;
+  margin-top: 5px;
+}
+.weapon-special kbd {
+  font-size: 9px;
+  margin-right: 5px;
+}
+.skill-quick {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+}
+.skill-quick button,
+.dash-quick {
+  width: 82px;
+  height: 61px;
+  padding: 3px;
+  border: 1px solid #adc6bb44;
+  border-radius: 4px;
+  position: relative;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.skill-quick kbd {
+  position: absolute;
+  left: 3px;
+  top: -5px;
+  font-size: 9px;
+  background: #23414e;
+}
+.skill-quick b {
+  font-size: 25px;
+  font-weight: 400;
+  line-height: 30px;
+  color: #c3e4d1;
+}
+.skill-quick span {
+  font-size: 10px;
+  color: #bdd3c6;
+}
+.skill-quick .locked {
+  opacity: 0.42;
+}
+.skill-quick .insufficient {
+  border-color: #c57e7988;
+}
+.skill-quick .cooldown {
+  background: #2a3b4e;
+}
+.battle-menu {
+  grid-column: 1/-1;
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  border-top: 1px solid #a1c1b822;
+  padding-top: 4px;
+}
+.battle-menu button {
+  border: 0;
+  background: transparent;
+  font-size: 10px;
+  padding: 2px 8px;
+  color: #aac6be;
+}
+.experience {
+  margin-top: 6px;
+}
+.world-hint {
+  bottom: 28px;
+  max-width: 200px;
+}
+.battle-status {
+  position: absolute;
+  left: 30px;
+  top: 124px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 11px;
+  color: #c8dbee;
+}
+.combo-count {
+  position: absolute;
+  left: 370px;
+  top: 175px;
+  font-size: 18px;
+  font-style: italic;
+  color: #dcebd3;
+  letter-spacing: 2px;
+  text-shadow: 0 3px 12px #041625;
+}
+.combo-count b {
+  font-size: 43px;
+  font-weight: 500;
+}
+.combo-count span {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: #accbc0;
+}
+.combo-count.high {
+  color: #f1d79d;
+}
+.boss-hud {
+  position: absolute;
+  left: 365px;
+  top: 25px;
+  width: 590px;
+  background: #101e33ed;
+  border: 1px solid #d1b0c856;
+  border-radius: 5px;
+  padding: 12px 16px;
+  box-shadow: 0 5px 30px #08132366;
+}
+.boss-hud > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.boss-hud strong {
+  font-size: 17px;
+  letter-spacing: 3px;
+  font-weight: 500;
+}
+.boss-hud > div:first-child > span {
+  font-size: 8px;
+  letter-spacing: 1.4px;
+  color: #a6b7cd;
+}
+.boss-hud > div:first-child > b {
+  font-size: 9px;
+  margin-left: auto;
+  font-weight: 400;
+  color: #e4b7c0;
+}
+.boss-health {
+  height: 9px;
+  background: #b0bad82b;
+  position: relative;
+  border-radius: 3px;
+  margin: 11px 0 7px;
+  overflow: hidden;
+}
+.boss-health i {
+  display: block;
+  background: linear-gradient(90deg, #879dd3, #cf98b3);
+  height: 100%;
+}
+.boss-health em {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: #10192d99;
+}
+.boss-hud p {
+  font-size: 10px;
+  color: #b3c8d5;
+  margin: 0;
+}
+.boss-hud p span {
+  float: right;
+  color: #e3cb9e;
+}
+.boss-hud small {
+  font-size: 10px;
+  color: #c4e8ef;
+}
+.boss-intro,
+.boss-victory {
+  position: absolute;
+  inset: 200px 240px auto;
+  text-align: center;
+  background: #091e33c9;
+  padding: 35px;
+  border-top: 1px solid #c5b5d167;
+  border-bottom: 1px solid #c5b5d167;
+}
+.boss-intro h2 {
+  font-size: 47px;
+  letter-spacing: 9px;
+  font-weight: 300;
+  margin: 15px;
+}
+.boss-intro p,
+.boss-victory span {
+  font-size: 13px;
+  color: #bfccd5;
+  letter-spacing: 3px;
+}
+.boss-intro button {
+  margin-top: 15px;
+  font-size: 12px;
+}
+.boss-victory h2 {
+  font-size: 30px;
+  font-weight: 400;
+  color: #e3d8b2;
+}
+.boss-victory p {
+  font-size: 14px;
+  color: #b9cec9;
+}
+.training-hud {
+  position: absolute;
+  left: 360px;
+  bottom: 160px;
+  max-width: 600px;
+  padding: 13px;
+  background: #112d3be6;
+  border: 1px solid #d2d6aa55;
+  border-radius: 4px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.training-hud > b {
+  color: #e1e3b8;
+}
+.training-hud > span {
+  font-size: 11px;
+  color: #b7d3ca;
+}
+.training-hud button {
+  font-size: 11px;
+  padding: 5px 9px;
+}
+.location > strong {
+  font-size: 16px;
+}
+.character-summary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 12px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #9dbbb53b;
+  padding-bottom: 16px;
+}
+.character-summary strong {
+  margin-left: auto;
+  color: #e8d29e;
+}
+.character-summary > span:last-child {
+  width: 100%;
+  font-size: 11px;
+  color: #a7c4b8;
+}
+.character-columns {
+  display: grid;
+  grid-template-columns: 230px 1fr;
+  gap: 24px;
+  margin-top: 16px;
+}
+.character-columns h3,
+.panel-section-title {
+  font-size: 15px;
+  font-weight: 500;
+  margin: 12px 0;
+}
+.character-columns h3 small {
+  font-size: 10px;
+  color: #8ba9aa;
+  font-weight: 400;
+}
+.stats-panel > div {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  border-bottom: 1px solid #9dbbb517;
+  padding: 6px 0;
+}
+.stats-panel b {
+  font-weight: 400;
+}
+.stats-panel em {
+  font-style: normal;
+  color: #a9dba6;
+  font-size: 10px;
+}
+.stats-panel p {
+  font-size: 10px !important;
+  color: #9fb9b2 !important;
+}
+.equipment-slots {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+}
+.equipment-slots > div {
+  border: 1px solid #9ab8b331;
+  background: #0c2637;
+  padding: 9px 7px;
+  border-radius: 4px;
+  min-height: 68px;
+  position: relative;
+}
+.equipment-slots small {
+  display: block;
+  color: #7fa5ab;
+  font-size: 9px;
+}
+.equipment-slots span {
+  display: block;
+  font-size: 10px;
+  margin-top: 5px;
+}
+.equipment-slots button {
+  padding: 2px 5px;
+  font-size: 9px;
+  border: 0;
+  margin-top: 3px;
+}
+.weapon-library {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.weapon-library article {
+  border: 1px solid #aac1b832;
+  background: #0b2435;
+  padding: 13px;
+  border-radius: 4px;
+}
+.weapon-library article > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  align-items: center;
+}
+.weapon-library strong {
+  font-size: 13px;
+  font-weight: 500;
+}
+.weapon-library small {
+  font-size: 10px;
+  color: #a6bdb4;
+}
+.weapon-library p {
+  font-size: 11px !important;
+  line-height: 1.7 !important;
+  min-height: 39px;
+  margin: 8px 0;
+}
+.weapon-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+.weapon-actions button {
+  font-size: 11px;
+  padding: 6px 10px;
+}
+.gear-bag {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+}
+.gear-bag > button {
+  padding: 10px;
+  text-align: left;
+  min-height: 54px;
+}
+.gear-bag b {
+  font-size: 11px;
+  font-weight: 400;
+  display: block;
+}
+.gear-bag small {
+  display: block;
+  color: #98b5b5;
+  font-size: 9px;
+  margin-top: 5px;
+}
+.gear-detail {
+  padding: 15px;
+  margin-top: 15px;
+  border: 1px solid #a6b6ce4d;
+  border-radius: 5px;
+  background: #0c2334;
+}
+.gear-detail h3 {
+  font-size: 15px;
+  font-weight: 500;
+}
+.gear-detail p {
+  font-size: 12px !important;
+}
+.gear-detail button {
+  font-size: 12px;
+  padding: 8px 11px;
+  margin-right: 8px;
+}
+.positive {
+  color: #a0d8a3;
+}
+.negative {
+  color: #e1a196;
+}
+.skill-slot-overview {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-bottom: 22px;
+}
+.skill-slot-overview > div {
+  font-size: 11px;
+  background: #0b2435;
+  border: 1px solid #adc2bd3b;
+  padding: 10px 6px;
+  border-radius: 4px;
+}
+.skill-slot-overview button {
+  font-size: 9px;
+  border: 0;
+  padding: 4px;
+  background: none;
+  color: #a2b6b5;
+}
+.skill-slot-overview kbd {
+  font-size: 10px;
+}
+.skill-library {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.skill-library article {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #a6c1b93b;
+  border-radius: 5px;
+  background: #0a2535;
+}
+.skill-library article > span {
+  font-size: 33px;
+  color: #c4e4cf;
+}
+.skill-library h3 {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+}
+.skill-library h3 small {
+  margin-left: 10px;
+}
+.skill-library p {
+  font-size: 11px !important;
+  min-height: 40px;
+  margin: 6px 0;
+  line-height: 1.7 !important;
+}
+.skill-library small {
+  font-size: 10px;
+  color: #9fb9b8;
+}
+.skill-library button {
+  font-size: 10px;
+  padding: 5px 6px;
+  margin: 10px 3px 0 0;
+}
+.skill-library .locked {
+  opacity: 0.5;
+}
+.modal.large {
+  width: 880px;
+}
+.controls-grid {
+  gap: 9px;
+}
+.modal .settings-grid {
+  gap: 16px;
+}
+.modal .eyebrow {
+  margin-bottom: 12px;
+}
+
+body:has(.modal) #toasts { visibility:hidden; }
+#hud:has(.boss-hud) .quest-panel {visibility:hidden;}

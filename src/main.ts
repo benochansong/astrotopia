@@ -8,6 +8,9 @@ import { SaveStore } from "./save/storage";
 import { Interface, type Modal } from "./ui/interface";
 import { opening, type ItemId } from "./data/content";
 import type { Settings } from "./core/types";
+import { EquipmentSystem } from "./combat/EquipmentSystem";
+import { difficulties, rarities } from "./data/battle";
+import type { GearSlot, SkillId, WeaponId } from "./combat/types";
 
 const storage = new SaveStore({
   getItem: (key) => localStorage.getItem(key),
@@ -47,6 +50,7 @@ function startGame(continuing = false) {
     return;
   }
   world = new World(data ?? undefined);
+  world.settings = settings;
   mode = "game";
   input.clear();
   ui.game();
@@ -82,9 +86,16 @@ ui.action = (action, value) => {
   audio.start();
   audio.play("ui");
   if (
-    ["settings", "controls", "credits", "inventory", "map", "pause"].includes(
-      action,
-    )
+    [
+      "settings",
+      "controls",
+      "credits",
+      "inventory",
+      "map",
+      "pause",
+      "character",
+      "skills",
+    ].includes(action)
   ) {
     if (
       (action === "inventory" || action === "map" || action === "pause") &&
@@ -95,6 +106,117 @@ ui.action = (action, value) => {
     return;
   }
   switch (action) {
+    case "weapon-switch":
+      world?.combat.weapons.switch(Number(value) as 0 | 1);
+      break;
+    case "cast":
+      if (world && !ui.modal && world.dead <= 0) {
+        const id = world.battle.skillSlots[Number(value)];
+        if (id) world.combat.skills.cast(id);
+      }
+      break;
+    case "training-end":
+      world?.combat.endTraining();
+      break;
+    case "trial":
+      if (world) {
+        world.combat.trial(value as WeaponId);
+        closeModal();
+      }
+      break;
+    case "boss-skip":
+      world?.combat.boss.skip();
+      break;
+    case "boss-leave":
+      if (world) {
+        world.combat.boss.abort();
+        world.enterRegion("valley", 3780);
+        closeModal();
+        save();
+      }
+      break;
+    case "gear-open":
+      if (world) {
+        openModal("character");
+        ui.gear(world, value!);
+      }
+      break;
+    case "gear":
+      if (world) ui.gear(world, value!);
+      break;
+    case "sell":
+      if (world) ui.gear(world, value!, true);
+      break;
+    case "sell-confirm":
+      if (
+        !world?.combat.training &&
+        world &&
+        !Object.values(world.battle.equipment).includes(value!)
+      ) {
+        const g = world.battle.gear.find((g) => g.id === value);
+        if (g) {
+          world.battle.credits += Math.round(rarities[g.rarity].mult * 20);
+          world.battle.gear = world.battle.gear.filter((g) => g.id !== value);
+          ui.open("character", world, settings);
+          save();
+        }
+      }
+      break;
+    case "equip":
+      if (!world?.combat.training && world && value) {
+        const [slot, id] = value.split(":");
+        EquipmentSystem.equip(world.battle, id, slot as GearSlot);
+        world.player.hp = Math.min(world.player.hp, world.stats.hp);
+        world.player.energy = Math.min(world.player.energy, world.stats.energy);
+        ui.open("character", world, settings);
+        save();
+      }
+      break;
+    case "unequip":
+      if (!world?.combat.training && world) {
+        EquipmentSystem.unequip(world.battle, value as GearSlot);
+        world.player.hp = Math.min(world.player.hp, world.stats.hp);
+        world.player.energy = Math.min(world.player.energy, world.stats.energy);
+        ui.open("character", world, settings);
+        save();
+      }
+      break;
+    case "loadout":
+      if (!world?.combat.training && world && value) {
+        const [slot, id] = value.split(":");
+        if (world.battle.ownedWeapons.includes(id as WeaponId)) {
+          world.battle.weaponSlots[Number(slot) as 0 | 1] = id as WeaponId;
+          delete world.battle.equipment[slot === "0" ? "primary" : "secondary"];
+          ui.open("character", world, settings);
+          save();
+        }
+      }
+      break;
+    case "skill-clear":
+      if (world) {
+        world.battle.skillSlots[Number(value)] = null;
+        ui.open("skills", world, settings);
+        save();
+      }
+      break;
+    case "skill-assign":
+      if (world && value) {
+        const [slot, id] = value.split(":"),
+          index = Number(slot),
+          skill = id as SkillId;
+        if (
+          world.battle.unlockedSkills.includes(skill) ||
+          world.combat.training
+        ) {
+          const previous = world.battle.skillSlots.indexOf(skill),
+            old = world.battle.skillSlots[index];
+          if (previous >= 0) world.battle.skillSlots[previous] = old;
+          world.battle.skillSlots[index] = skill;
+          ui.open("skills", world, settings);
+          save();
+        }
+      }
+      break;
     case "new":
       if (storage.load()) openModal("confirm");
       else startOpening();
@@ -139,6 +261,18 @@ ui.action = (action, value) => {
   }
 };
 ui.setting = (key, value) => {
+  if (key === "shake") settings.shake = Number(value);
+  if (key === "damageNumbers") settings.damageNumbers = value === "true";
+  if (key === "difficulty") {
+    const next = value as Settings["difficulty"],
+      ratio = difficulties[next].hp / difficulties[settings.difficulty].hp;
+    if (world)
+      for (const e of world.combat.targets) {
+        e.hp *= ratio;
+        e.maxHp = Math.round(e.maxHp * ratio);
+      }
+    settings.difficulty = next;
+  }
   if (key === "effects") settings.effects = value as Settings["effects"];
   else if (key === "music" || key === "sfx") settings[key] = Number(value);
   audio.set(settings);
@@ -149,7 +283,15 @@ input.onMenu = (key) => {
   audio.start();
   if (mode !== "game" || !world || world.dead > 0) return;
   const target =
-    key === "KeyI" ? "inventory" : key === "KeyM" ? "map" : "pause";
+    key === "KeyI"
+      ? "inventory"
+      : key === "KeyM"
+        ? "map"
+        : key === "KeyC"
+          ? "character"
+          : key === "KeyV"
+            ? "skills"
+            : "pause";
   if (ui.modal) closeModal();
   else openModal(target);
 };
@@ -248,7 +390,11 @@ class ExpeditionScene extends Phaser.Scene {
           openModal("ending");
         }
       }
-      audio.region(world.region);
+      audio.region(
+        world.combat.boss.active
+          ? "boss" + world.combat.boss.phase
+          : world.region,
+      );
       art.world(c, world, settings.effects === "low");
       hudClock += dt;
       if (hudClock > 0.1) {

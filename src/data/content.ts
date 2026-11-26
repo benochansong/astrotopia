@@ -1,3 +1,4 @@
+import type { Element, EliteAffix } from "../combat/types";
 export type RegionId = "crash" | "forest" | "valley";
 export type ItemId =
   | "iron"
@@ -8,8 +9,23 @@ export type ItemId =
   | "scrap"
   | "gel"
   | "tissue"
-  | "medkit";
-export type EnemyKind = "slime" | "crawler" | "manta";
+  | "medkit"
+  | "fragment"
+  | "ancientCrystal"
+  | "titanCore";
+export type EnemyKind =
+  | "slime"
+  | "crawler"
+  | "manta"
+  | "spore"
+  | "beetle"
+  | "worm"
+  | "volt"
+  | "wisp"
+  | "golem"
+  | "stalker"
+  | "dummy"
+  | "titan";
 export interface Platform {
   x: number;
   y: number;
@@ -30,7 +46,15 @@ export interface Landmark {
   label: string;
   x: number;
   y: number;
-  kind: "ship" | "capsule" | "beacon" | "heal" | "chest" | "ruin";
+  kind:
+    | "ship"
+    | "capsule"
+    | "beacon"
+    | "heal"
+    | "chest"
+    | "ruin"
+    | "training"
+    | "boss";
 }
 export interface Region {
   id: RegionId;
@@ -43,7 +67,7 @@ export interface Region {
   platforms: Platform[];
   resources: Resource[];
   landmarks: Landmark[];
-  enemies: { kind: EnemyKind; x: number; y: number }[];
+  enemies: { kind: EnemyKind; x: number; y: number; elite?: EliteAffix }[];
 }
 export interface Planet {
   id: string;
@@ -112,6 +136,27 @@ export const items: Record<
     icon: string;
   }
 > = {
+  fragment: {
+    name: "수정 파편",
+    type: "부품",
+    description: "수정 갑충의 장갑에서 떨어진 희귀 소재.",
+    color: "#a4c6f5",
+    icon: "◈",
+  },
+  ancientCrystal: {
+    name: "고대 에너지 결정",
+    type: "광물",
+    description: "고대 수호자의 에너지 잔류물. 정제와 제작 연구에 사용됩니다.",
+    color: "#e5b9f7",
+    icon: "✧",
+  },
+  titanCore: {
+    name: "EDEN TITAN 코어",
+    type: "스토리",
+    description: "우주선의 동력 장치 연구에 필요한 핵심 코어. 첫 처치 보상.",
+    color: "#e6cd8c",
+    icon: "✦",
+  },
   iron: {
     name: "철광석",
     type: "광물",
@@ -176,7 +221,138 @@ export const items: Record<
     icon: "✚",
   },
 };
-export const enemyData = {
+export interface EnemyData {
+  name: string;
+  hp: number;
+  damage: number;
+  speed: number;
+  xp: number;
+  drop: ItemId;
+  color: string;
+  w: number;
+  h: number;
+  defense?: number;
+  resists?: Partial<Record<Element, number>>;
+  range?: number;
+  flying?: boolean;
+}
+export const enemyData: Record<EnemyKind, EnemyData> = {
+  spore: {
+    name: "SPORE WALKER",
+    hp: 90,
+    damage: 16,
+    speed: 28,
+    xp: 34,
+    drop: "fiber",
+    color: "#b8c98a",
+    w: 54,
+    h: 72,
+    range: 330,
+    resists: { plasma: 1.35, toxic: 0.5 },
+  },
+  beetle: {
+    name: "CRYSTAL BEETLE",
+    hp: 160,
+    damage: 23,
+    speed: 42,
+    xp: 55,
+    drop: "fragment",
+    color: "#93b9df",
+    w: 70,
+    h: 48,
+    defense: 9,
+    resists: { physical: 0.75, electric: 1.4 },
+    range: 125,
+  },
+  worm: {
+    name: "BURROW WORM",
+    hp: 130,
+    damage: 24,
+    speed: 85,
+    xp: 48,
+    drop: "biomass",
+    color: "#c5aa90",
+    w: 48,
+    h: 78,
+    range: 260,
+  },
+  volt: {
+    name: "VOLT HUNTER",
+    hp: 118,
+    damage: 21,
+    speed: 105,
+    xp: 47,
+    drop: "tissue",
+    color: "#e2d48a",
+    w: 58,
+    h: 45,
+    range: 220,
+    resists: { electric: 0.55, cryo: 1.4 },
+  },
+  wisp: {
+    name: "PHANTOM WISP",
+    hp: 100,
+    damage: 19,
+    speed: 65,
+    xp: 44,
+    drop: "tissue",
+    color: "#d6b3f1",
+    w: 44,
+    h: 50,
+    range: 370,
+    flying: true,
+    resists: { physical: 0.8 },
+  },
+  golem: {
+    name: "CRYSTAL GOLEM",
+    hp: 330,
+    damage: 35,
+    speed: 28,
+    xp: 90,
+    drop: "fragment",
+    color: "#90adc9",
+    w: 92,
+    h: 120,
+    defense: 12,
+    range: 220,
+    resists: { physical: 0.65 },
+  },
+  stalker: {
+    name: "EDEN STALKER",
+    hp: 245,
+    damage: 29,
+    speed: 125,
+    xp: 85,
+    drop: "biomass",
+    color: "#a6bfc2",
+    w: 80,
+    h: 60,
+    range: 260,
+  },
+  dummy: {
+    name: "훈련 표적",
+    hp: 100000,
+    damage: 0,
+    speed: 0,
+    xp: 0,
+    drop: "scrap",
+    color: "#d4cfa8",
+    w: 44,
+    h: 80,
+  },
+  titan: {
+    name: "EDEN TITAN",
+    hp: 8000,
+    damage: 32,
+    speed: 55,
+    xp: 900,
+    drop: "ancientCrystal",
+    color: "#aac7d6",
+    w: 300,
+    h: 220,
+    defense: 15,
+    resists: { physical: 0.8 },
+  },
   slime: {
     name: "GLOW SLIME",
     hp: 36,
@@ -200,6 +376,7 @@ export const enemyData = {
     h: 38,
   },
   manta: {
+    flying: true,
     name: "SKY MANTA",
     hp: 48,
     damage: 13,
@@ -435,6 +612,67 @@ export const questData = [
     ],
     xp: 90,
   },
+  {
+    name: "전투 준비",
+    story: "불시착 지점의 훈련 장치를 사용하세요.",
+    goals: [
+      ["training", "전투 훈련장 방문", 1],
+      ["trainingHit", "기본 공격 연습", 3],
+      ["trainingDodge", "회피 연습", 1],
+      ["trainingTrial", "새 무기 시험", 1],
+    ],
+    xp: 100,
+  },
+  {
+    name: "깊은 숲의 위협",
+    story: "숲의 심층부에서 새로운 생명체를 조사하세요.",
+    goals: [
+      ["forestDeep", "발광 숲 심층부 발견", 1],
+      ["discover_volt", "전기 사냥꾼 조사", 1],
+      ["biomass", "외계 생체 물질 수집", 5],
+    ],
+    xp: 160,
+  },
+  {
+    name: "수정 갑충의 비밀",
+    story: "후방 또는 전기·특수 공격으로 장갑을 공략하세요.",
+    goals: [
+      ["discover_beetle", "수정 갑충 조사", 1],
+      ["weakness", "약점 공격 성공", 1],
+      ["fragment", "수정 파편 수집", 3],
+    ],
+    xp: 200,
+  },
+  {
+    name: "비정상적인 에너지",
+    story: "위험 구역의 엘리트와 고대 신호를 추적하세요.",
+    goals: [
+      ["eliteDiscover", "엘리트 발견", 1],
+      ["eliteKill", "엘리트 처치", 1],
+      ["ruin", "고대 유적 조사", 1],
+    ],
+    xp: 230,
+  },
+  {
+    name: "잠들어 있던 수호자",
+    story: "유적 동쪽의 타이탄 봉인을 조사하세요. 권장 레벨 12–15.",
+    goals: [
+      ["titanDiscover", "타이탄 발견", 1],
+      ["titanKill", "타이탄 처치", 1],
+      ["titanCore", "타이탄 코어 확보", 1],
+    ],
+    xp: 300,
+  },
+  {
+    name: "새로운 개척의 시작",
+    story: "코어를 가지고 돌아가 통신 장치와 우주선을 조사하세요.",
+    goals: [
+      ["returnCamp", "불시착 지점 귀환", 1],
+      ["coreAnalysis", "통신 장치에서 코어 분석", 1],
+      ["engine", "우주선 동력 장치 조사", 1],
+    ],
+    xp: 250,
+  },
 ] as const;
 export const opening = [
   [
@@ -454,4 +692,67 @@ export const opening = [
   ["IMPACT · SIGNAL LOST", "불시착. 그리고 긴 침묵."],
   ["EDEN · FIRST CONTACT", "낯선 바람이 바이저를 스친다. 당신은 살아 있다."],
   ["A NEW BEGINNING", "이제, 당신의 첫 번째 발자국을 남길 시간이다."],
+];
+
+// Phase 2 expands the existing regions; IDs and Phase 1 landmarks stay stable.
+regions.crash.landmarks.push({
+  id: "training",
+  label: "전투 훈련장 · F 입장/퇴장",
+  x: 2140,
+  y: 780,
+  kind: "training",
+});
+regions.crash.enemies.push(
+  { kind: "slime", x: 2720, y: 780 },
+  { kind: "slime", x: 2950, y: 780 },
+);
+regions.forest.enemies = [
+  { kind: "slime", x: 700, y: 780 },
+  { kind: "slime", x: 1150, y: 780 },
+  { kind: "slime", x: 1700, y: 780 },
+  { kind: "crawler", x: 900, y: 780 },
+  { kind: "spore", x: 1400, y: 780 },
+  { kind: "volt", x: 2170, y: 780 },
+  { kind: "manta", x: 2700, y: 670 },
+  { kind: "wisp", x: 3020, y: 600 },
+  { kind: "crawler", x: 3350, y: 780, elite: "electric" },
+  { kind: "spore", x: 2480, y: 780, elite: "regenerating" },
+];
+regions.valley.width = 5200;
+regions.valley.platforms.find((p) => p.x === 2670 && !p.oneWay)!.w = 2530;
+regions.valley.platforms.push(
+  ledge(4140, 640, 190),
+  ledge(4520, 540, 210),
+  ledge(4870, 640, 190),
+);
+regions.valley.landmarks.push(
+  { id: "ruins-camp", label: "회복 및 저장", x: 3780, y: 780, kind: "heal" },
+  {
+    id: "titan-gate",
+    label: "타이탄 봉인 조사 · 권장 Lv.12–15",
+    x: 3940,
+    y: 780,
+    kind: "boss",
+  },
+);
+regions.valley.enemies = [
+  { kind: "beetle", x: 650, y: 780, elite: "fortified" },
+  { kind: "manta", x: 1190, y: 500 },
+  { kind: "worm", x: 1590, y: 780, elite: "splitting" },
+  { kind: "beetle", x: 1880, y: 780 },
+  { kind: "wisp", x: 2400, y: 470, elite: "shielded" },
+  { kind: "golem", x: 2910, y: 780 },
+  { kind: "stalker", x: 3300, y: 780, elite: "berserk" },
+];
+planets[0].enemyTypes = [
+  "slime",
+  "crawler",
+  "manta",
+  "spore",
+  "beetle",
+  "worm",
+  "volt",
+  "wisp",
+  "golem",
+  "stalker",
 ];

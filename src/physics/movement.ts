@@ -12,6 +12,7 @@ export function movePlayer(
   dt: number,
   platforms: Platform[],
   gravity: number,
+  tuning = { speed: 250, energy: 100, regen: 12 },
 ): boolean {
   const landedBefore = p.grounded;
   p.coyote = p.grounded ? 0.12 : Math.max(0, p.coyote - dt);
@@ -41,7 +42,8 @@ export function movePlayer(
   }
   if (input.dash && p.dashCooldown === 0 && p.energy >= 18) {
     p.dash = 0.17;
-    p.dashCooldown = 0.8;
+    p.dashCooldown = 2;
+    p.invulnerable = Math.max(p.invulnerable, 0.18);
     p.energy -= 18;
   }
   if (p.jumpBuffer > 0 && p.coyote > 0 && !p.drop) {
@@ -54,7 +56,11 @@ export function movePlayer(
   p.vx =
     p.dash > 0
       ? p.facing * 660
-      : approach(p.vx, direction * 250, (p.grounded ? 1800 : 1100) * dt);
+      : approach(
+          p.vx,
+          direction * tuning.speed,
+          (p.grounded ? 1800 : 1100) * dt,
+        );
   if (p.dash > 0) p.vy = 0;
   else p.vy = Math.min(p.vy + 1100 * gravity * dt, 800);
   const oldX = p.x;
@@ -82,6 +88,6 @@ export function movePlayer(
       p.vy = 0;
     }
   }
-  p.energy = Math.min(100, p.energy + dt * 12);
+  p.energy = Math.min(tuning.energy, p.energy + dt * tuning.regen);
   return !landedBefore && p.grounded;
 }

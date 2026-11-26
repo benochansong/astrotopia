@@ -1,4 +1,12 @@
 import {
+  drawWeapon,
+  drawCreature,
+  enemyMarks,
+  drawCombat,
+  drawTitan,
+} from "./battle-art";
+import type { WeaponId } from "../combat/types";
+import {
   enemyData,
   items,
   regions,
@@ -827,7 +835,14 @@ export class Art {
       }
     }
   }
-  player(c: CanvasRenderingContext2D, p: Player, time: number) {
+  player(
+    c: CanvasRenderingContext2D,
+    p: Player,
+    time: number,
+    weapon: WeaponId = "pulse",
+    charge = 0,
+    combo = 0,
+  ) {
     if (p.invulnerable > 0 && Math.floor(time * 14) % 2 === 0)
       c.globalAlpha = 0.6;
     c.save();
@@ -884,22 +899,21 @@ export class Art {
     else if (p.animation === "Attack") c.translate(-2, 0);
     box(c, -2, -3, 14, 9, "#d6e1d7", 4);
     box(c, 8, 1, 7, 8, "#304d62", 2);
-    box(c, 12, -5, 24, 10, "#244459", 3);
-    box(c, 17, -7, 10, 4, "#9ebbbd", 1);
-    box(c, 28, -4, 8, 5, "#b7eee2", 1);
-    if (p.animation === "Attack") {
-      glow(c, 40, 0, 18, "#ccf7abaf");
-      poly(c, [36, -5, 49, 0, 36, 5], "#efffbc");
-    }
+    drawWeapon(c, weapon, time, p.animation === "Attack", charge, combo);
     c.restore();
     c.restore();
     c.globalAlpha = 1;
   }
   enemy(c: CanvasRenderingContext2D, e: Enemy, time: number) {
+    if (!["slime", "crawler", "manta"].includes(e.kind)) {
+      drawCreature(c, e, time);
+      return;
+    }
     const d = enemyData[e.kind];
     c.save();
     c.translate(e.x + d.w / 2, e.y + d.h);
-    c.scale(e.facing, 1);
+    c.scale(e.facing * (e.elite ? 1.25 : 1), e.elite ? 1.25 : 1);
+    if (e.flash > 0) c.filter = "brightness(1.9)";
     const wiggle = Math.sin(time * 6 + e.id) * 2;
     if (e.kind === "slime") {
       const g = c.createLinearGradient(0, -40, 0, 0);
@@ -967,29 +981,40 @@ export class Art {
       ellipse(c, 6, -20, 3, 3, "#efffc1");
     }
     c.restore();
-    if (e.hp < d.hp || e.state === "Detect" || e.state === "Attack") {
-      box(c, e.x, e.y - 14, d.w, 4, "#0a2238", 2);
-      box(c, e.x, e.y - 14, d.w * Math.max(0, e.hp / d.hp), 4, "#e5bb87", 2);
-    }
-    if (
-      e.state === "Detect" ||
-      (e.state === "Attack" && e.timer > 0.65 && e.kind !== "slime")
-    ) {
-      c.font = "bold 20px sans-serif";
-      c.fillStyle = "#ffe0a2";
-      c.textAlign = "center";
-      c.fillText("!", e.x + d.w / 2, e.y - 23);
-    }
+    enemyMarks(c, e);
   }
   world(c: CanvasRenderingContext2D, w: World, low = false) {
     this.background(c, w.region, w.camera, w.time, low);
     c.save();
     c.translate(
-      -w.camera.x + (Math.random() - 0.5) * w.camera.shake,
-      -w.camera.y + (Math.random() - 0.5) * w.camera.shake,
+      -w.camera.x + (Math.random() - 0.5) * w.camera.shake * w.settings.shake,
+      -w.camera.y + (Math.random() - 0.5) * w.camera.shake * w.settings.shake,
     );
     this.terrain(c, w);
     this.landmarks(c, w);
+    drawCombat(c, w);
+    drawTitan(c, w);
+    for (const l of w.map.landmarks)
+      if (l.kind === "training" || l.kind === "boss") {
+        box(c, l.x - 20, l.y - 65, 40, 65, "#314c63", 6);
+        box(
+          c,
+          l.x - 14,
+          l.y - 58,
+          28,
+          30,
+          l.kind === "boss" ? "#bb8ad8" : "#9bd9cd",
+          3,
+        );
+        c.font = "13px sans-serif";
+        c.fillStyle = "#e4eee3";
+        c.textAlign = "center";
+        c.fillText(
+          l.kind === "boss" ? "TITAN · F" : "TRAINING · F",
+          l.x,
+          l.y - 80,
+        );
+      }
     for (const n of w.map.resources) {
       if (w.cooldowns[n.id] > 0 || Math.abs(n.x - w.camera.x - 640) > 750)
         continue;
@@ -1023,10 +1048,22 @@ export class Art {
         this.enemy(c, e, w.time);
     for (const b of w.bullets)
       if (b.active) {
-        line(c, [b.x - Math.sign(b.vx) * 19, b.y, b.x, b.y], "#97edda", 4);
+        line(
+          c,
+          [b.x - Math.sign(b.vx) * 19, b.y, b.x, b.y],
+          b.color ?? "#97edda",
+          Math.min(12, b.radius ?? 4),
+        );
         ellipse(c, b.x, b.y, 5, 2, "#efffd3");
       }
-    this.player(c, w.player, w.time);
+    this.player(
+      c,
+      w.player,
+      w.time,
+      w.combat.weapons.id,
+      w.combat.weapons.charge,
+      w.combat.weapons.comboStep,
+    );
     for (const p of w.particles)
       if (p.active) {
         c.globalAlpha = Math.min(1, p.life * 2);
@@ -1035,7 +1072,7 @@ export class Art {
     c.globalAlpha = 1;
     c.textAlign = "center";
     c.font = 'bold 17px "Segoe UI",sans-serif';
-    for (const t of w.texts) {
+    for (const t of w.settings.damageNumbers ? w.texts : []) {
       c.globalAlpha = Math.min(1, t.life * 2);
       c.fillStyle = t.color;
       c.fillText(t.text, t.x, t.y);

@@ -1,4 +1,11 @@
 import type { EnemyKind, ItemId, RegionId } from "../data/content";
+import type {
+  BattleSave,
+  Element,
+  EliteAffix,
+  Status,
+  StatusId,
+} from "../combat/types";
 export type Animation =
   | "Idle"
   | "Walk"
@@ -38,6 +45,9 @@ export interface Settings {
   music: number;
   sfx: number;
   effects: "high" | "low";
+  shake: number;
+  damageNumbers: boolean;
+  difficulty: "explorer" | "normal" | "veteran";
 }
 export interface Progress {
   counters: Record<string, number>;
@@ -47,7 +57,8 @@ export interface Progress {
   checkpoint: { region: RegionId; x: number };
 }
 export interface SaveData {
-  version: 1;
+  version: 2;
+  battle: BattleSave;
   savedAt: number;
   region: RegionId;
   x: number;
@@ -61,6 +72,10 @@ export interface SaveData {
   settings: Settings;
 }
 export type EnemyState =
+  | "Alert"
+  | "PrepareAttack"
+  | "Recover"
+  | "Retreat"
   | "Idle"
   | "Patrol"
   | "Detect"
@@ -70,6 +85,17 @@ export type EnemyState =
   | "Return"
   | "Death";
 export interface Enemy {
+  maxHp: number;
+  statuses: Status[];
+  elite?: EliteAffix;
+  ccImmunity: number;
+  staggerGuard?: number;
+  flash: number;
+  shield: number;
+  regenBudget: number;
+  action: number;
+  launched: number;
+  noLoot?: boolean;
   id: number;
   kind: EnemyKind;
   x: number;
@@ -97,6 +123,19 @@ export interface Particle {
   size: number;
 }
 export interface Bullet {
+  vy?: number;
+  radius?: number;
+  element?: Element;
+  pierce?: boolean;
+  blast?: number;
+  status?: StatusId;
+  statusChance?: number;
+  crit?: number;
+  critDamage?: number;
+  knockback?: number;
+  special?: boolean;
+  hits?: number[];
+  color?: string;
   active: boolean;
   x: number;
   y: number;
@@ -119,6 +158,9 @@ export interface FloatingText {
   life: number;
 }
 export interface InputFrame {
+  special?: boolean;
+  weaponSlot?: 0 | 1;
+  skillSlot?: number;
   left: boolean;
   right: boolean;
   jump: boolean;

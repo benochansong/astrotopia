@@ -28,8 +28,13 @@ import {
   movePlayer,
   xpRequired,
 } from "../physics/movement";
-import { addItem, type Inventory } from "../systems/inventory";
-import { newProgress } from "../save/storage";
+import { addItem, occupiedSlots, type Inventory } from "../systems/inventory";
+import { newProgress, defaultSettings } from "../save/storage";
+import { newBattle } from "../data/battle";
+import { EquipmentSystem } from "../combat/EquipmentSystem";
+import { CombatSystem } from "../combat/CombatSystem";
+import { createEnemy } from "../combat/EnemyAI";
+import type { Element } from "../combat/types";
 export type WorldEvent = {
   type: "sound" | "toast" | "save" | "ending";
   text: string;
@@ -61,11 +66,17 @@ export function createPlayer(x = 360, y = 716): Player {
 }
 export class World {
   player = createPlayer();
+  battle = newBattle();
+  settings = defaultSettings();
+  combat = new CombatSystem(this);
+  get stats() {
+    return EquipmentSystem.stats(this.player.level, this.battle);
+  }
   region: RegionId = "crash";
   progress: Progress = newProgress();
   inventory: Inventory = { medkit: 2 };
   enemies: Enemy[] = [];
-  bullets: Bullet[] = Array.from({ length: 32 }, () => ({
+  bullets: Bullet[] = Array.from({ length: 64 }, () => ({
     active: false,
     x: 0,
     y: 0,
@@ -95,10 +106,13 @@ export class World {
   transition = 0;
   regionNotice = 5;
   safe = { x: 360, y: 716 };
+  private buffered: Partial<InputFrame> = {};
   private autosave = 0;
   private moved = false;
   constructor(save?: SaveData) {
     if (save) {
+      this.battle = structuredClone(save.battle);
+      this.settings = { ...save.settings };
       this.region = save.region;
       this.player = createPlayer(save.x, save.y);
       Object.assign(this.player, {
@@ -113,12 +127,14 @@ export class World {
         this.region = this.progress.checkpoint.region;
         this.player.x = this.progress.checkpoint.x;
         this.player.y = 716;
+        this.player.hp = this.stats.hp;
         this.player.invulnerable = 4;
       }
       this.ensureSafePosition();
     }
     this.safe = { x: this.player.x, y: this.player.y };
     this.spawnEnemies();
+    this.combat.unlock();
     this.camera.x = Math.max(0, this.player.x - 500);
   }
   get map() {
@@ -145,22 +161,9 @@ export class World {
     }
   }
   spawnEnemies() {
-    this.enemies = this.map.enemies.map((e, id) => ({
-      id,
-      kind: e.kind,
-      x: e.x,
-      y: e.y - enemyData[e.kind].h,
-      homeX: e.x,
-      homeY: e.y - enemyData[e.kind].h,
-      vx: 0,
-      vy: 0,
-      hp: enemyData[e.kind].hp,
-      state: "Idle",
-      timer: 0.3 + id * 0.2,
-      facing: -1,
-      attackX: 0,
-      attackY: 0,
-    }));
+    this.enemies = this.map.enemies.map((e, id) =>
+      createEnemy(e.kind, e.x, e.y, id, e.elite, this.settings.difficulty),
+    );
   }
   count(key: string, n = 1) {
     this.progress.counters[key] = (this.progress.counters[key] ?? 0) + n;
@@ -176,7 +179,7 @@ export class World {
       this.toast(`임무 완료 · ${q.name}  +${q.xp} XP`);
       this.sound("quest");
       this.emit("save", "quest");
-      if (this.progress.quest === 4)
+      if (this.progress.quest === 4 || this.progress.quest === 10)
         this.emit(
           "ending",
           "이 행성에는 우리가 생각했던 것보다 훨씬 오래된 비밀이 존재한다.",
@@ -190,7 +193,8 @@ export class World {
     while (p.level < 15 && p.xp >= xpRequired(p.level)) {
       p.xp -= xpRequired(p.level);
       p.level++;
-      p.hp = maxHp(p.level);
+      this.combat.unlock();
+      p.hp = this.stats.hp;
       this.burst(p.x + 17, p.y + 30, "#e8df98", 40);
       this.toast(`LEVEL UP · 탐험가 Lv.${p.level}`);
       this.sound("level");
@@ -199,12 +203,17 @@ export class World {
     if (p.level === 15) p.xp = 0;
   }
   collect(item: ItemId, count: number) {
-    if (!addItem(this.inventory, item, count)) {
+    const next = { ...this.inventory };
+    if (
+      !addItem(next, item, count) ||
+      occupiedSlots(next) + this.battle.gear.length > 24
+    ) {
       this.toast(
         "인벤토리가 가득 찼습니다. 회복 키트를 사용해 공간을 확보하세요.",
       );
       return false;
     }
+    this.inventory = next;
     this.count(item, count);
     this.toast(`${items[item].name} +${count}`);
     this.sound("pickup");
@@ -229,10 +238,11 @@ export class World {
       });
     }
   }
-  damage(amount: number, fromX: number) {
+  damage(amount: number, fromX: number, element: Element = "physical") {
     const p = this.player;
-    if (p.invulnerable > 0 || this.dead > 0) return;
-    p.hp = Math.max(0, p.hp - Math.max(1, amount - 5));
+    if (p.invulnerable > 0 || this.dead > 0 || this.combat.training) return;
+    const actual = this.combat.receive(amount, element);
+    p.hp = Math.max(0, p.hp - actual);
     p.invulnerable = 1.1;
     p.vx = (p.x < fromX ? -1 : 1) * 280;
     p.vy = -150;
@@ -244,7 +254,7 @@ export class World {
     this.texts.push({
       x: p.x,
       y: p.y,
-      text: `−${Math.max(1, amount - 5)}`,
+      text: `−${actual}`,
       color: "#ffb29c",
       life: 1,
     });
@@ -258,14 +268,15 @@ export class World {
   respawn() {
     const { region, x } = this.progress.checkpoint;
     this.enterRegion(region, x);
-    this.player.hp = maxHp(this.player.level);
-    this.player.energy = 100;
+    this.player.hp = this.stats.hp;
+    this.player.energy = this.stats.energy;
     this.player.invulnerable = 4;
     this.dead = 0;
     this.toast("회복 지점에서 깨어났습니다 · 자원과 경험치는 유지됩니다.");
     this.emit("save", "respawn");
   }
   enterRegion(id: RegionId, x?: number) {
+    this.combat.reset();
     this.region = id;
     const p = this.player;
     p.x = x ?? regions[id].spawn;
@@ -294,6 +305,12 @@ export class World {
       this.count(id);
       this.toast(`새로운 지역 발견 · ${regions[id].name} +25 XP`);
     }
+    if (
+      id === "crash" &&
+      this.battle.bossKills > 0 &&
+      !this.progress.counters.returnCamp
+    )
+      this.count("returnCamp");
     this.emit("save", "region");
   }
   nearby() {
@@ -330,15 +347,51 @@ export class World {
     if (this.mining) return;
     const target = this.nearby();
     if (!target) return;
+    if (this.combat.training) {
+      if (target.id === "training") this.combat.endTraining();
+      return;
+    }
     if ("node" in target) {
       this.mining = { node: target.node, elapsed: 0 };
       this.sound("mine");
       return;
     }
     const l = target.landmark;
+    if (l.kind === "training") {
+      this.combat.startTraining();
+      return;
+    }
+    if (l.kind === "boss") {
+      this.combat.boss.start();
+      return;
+    }
+    if (
+      l.id === "beacon" &&
+      this.progress.counters.titanCore &&
+      !this.progress.counters.coreAnalysis
+    ) {
+      this.count("coreAnalysis");
+      this.battle.story.push("coreAnalysis");
+      this.toast("타이탄 코어 분석 완료 · 고대 에너지 변환 프로토콜 확보");
+      this.emit("save", "analysis");
+      return;
+    }
+    if (
+      l.id === "ship" &&
+      this.progress.counters.coreAnalysis &&
+      !this.progress.counters.engine
+    ) {
+      this.count("engine");
+      this.battle.story.push("engine");
+      this.toast(
+        "동력 장치 분석 완료 · 정제·제작을 통한 새로운 개척이 필요합니다.",
+      );
+      this.emit("save", "engine");
+      return;
+    }
     if (l.kind === "heal") {
-      this.player.hp = maxHp(this.player.level);
-      this.player.energy = 100;
+      this.player.hp = this.stats.hp;
+      this.player.energy = this.stats.energy;
       this.progress.checkpoint = { region: this.region, x: l.x };
       this.emit("save", "checkpoint");
       this.toast("회복 완료 · 이곳에 귀환 신호를 남겼습니다.");
@@ -348,6 +401,13 @@ export class World {
       if (this.collect("medkit", 2)) {
         this.progress.opened.push(l.id);
         this.addXp(15);
+        this.combat.loot.place(
+          l.x,
+          l.y - 30,
+          undefined,
+          1,
+          this.combat.loot.gear("uncommon"),
+        );
         this.emit("save", "chest");
       }
     } else {
@@ -370,7 +430,11 @@ export class World {
     }
   }
   heal() {
-    if (this.player.hp >= maxHp(this.player.level)) {
+    if (this.combat.training) {
+      this.player.hp = this.stats.hp;
+      return;
+    }
+    if (this.player.hp >= this.stats.hp) {
       this.toast("체력이 이미 가득 찼습니다.");
       return;
     }
@@ -379,7 +443,7 @@ export class World {
       return;
     }
     this.inventory.medkit--;
-    this.player.hp = Math.min(maxHp(this.player.level), this.player.hp + 50);
+    this.player.hp = Math.min(this.stats.hp, this.player.hp + 50);
     this.sound("heal");
     this.burst(this.player.x, this.player.y, "#b1f3bd");
     this.toast("체력 +50");
@@ -397,6 +461,31 @@ export class World {
       this.effects(dt);
       return;
     }
+    this.combat.tickEffects(dt);
+    if (this.combat.boss.intro > 0) {
+      this.combat.boss.update(dt);
+      this.effects(dt);
+      return;
+    }
+    if (this.combat.hitStop > 0) {
+      for (const key of [
+        "jump",
+        "dash",
+        "interact",
+        "heal",
+        "special",
+      ] as const)
+        if (input[key]) this.buffered[key] = true;
+      if (input.weaponSlot !== undefined)
+        this.buffered.weaponSlot = input.weaponSlot;
+      if (input.skillSlot !== undefined)
+        this.buffered.skillSlot = input.skillSlot;
+      this.effects(dt);
+      return;
+    }
+    input = { ...input, ...this.buffered };
+    this.buffered = {};
+    this.combat.beforeMovement(dt, input);
     const p = this.player;
     if (input.interact) this.interact();
     if (input.heal) this.heal();
@@ -409,10 +498,20 @@ export class World {
       const step = Math.min(remaining, MAX_STEP);
       const landed = movePlayer(
         p,
-        { ...input, jump: first && input.jump, dash: first && input.dash },
+        {
+          ...input,
+          jump: first && input.jump,
+          jumpHeld: input.jumpHeld || this.combat.skills.liftTime > 0,
+          dash: first && input.dash,
+        },
         step,
         this.map.platforms,
         planets[0].gravity,
+        {
+          speed: this.stats.moveSpeed * this.combat.weapons.movement(input),
+          energy: this.stats.energy,
+          regen: this.stats.regen,
+        },
       );
       if (landed) {
         p.animation = "Land";
@@ -448,24 +547,6 @@ export class World {
       this.burst(p.x + 17, p.y + 40, "#77e5df", 2);
       if (input.dash) this.sound("dash");
     }
-    if (input.attack && p.shotCooldown === 0) {
-      const b = this.bullets.find((b) => !b.active);
-      if (b) {
-        Object.assign(b, {
-          active: true,
-          x: p.x + 17 + p.facing * 30,
-          y: p.y + 30,
-          vx: p.facing * 720,
-          life: 1.4,
-          damage: attackPower(p.level),
-        });
-        p.shotCooldown = 0.24;
-        p.animation = "Attack";
-        p.animationTime = 0.16;
-        this.sound("shoot");
-        this.burst(b.x, b.y, "#e5fcb7", 3);
-      }
-    }
     if (this.mining) {
       const { node } = this.mining;
       if (
@@ -494,73 +575,9 @@ export class World {
     }
     for (const id in this.cooldowns)
       this.cooldowns[id] = Math.max(0, this.cooldowns[id] - dt);
-    this.updateEnemies(dt);
-    for (const b of this.bullets) {
-      if (!b.active) continue;
-      const from = b.x;
-      b.x += b.vx * dt;
-      b.life -= dt;
-      if (b.life <= 0 || Math.abs(b.x - p.x) > 1300) {
-        b.active = false;
-        continue;
-      }
-      for (const e of this.enemies) {
-        const d = enemyData[e.kind];
-        if (e.state === "Death" || b.y < e.y - 4 || b.y > e.y + d.h + 4)
-          continue;
-        if (Math.max(from, b.x) >= e.x && Math.min(from, b.x) <= e.x + d.w) {
-          e.hp -= b.damage;
-          e.vx = Math.sign(b.vx) * 180;
-          e.state = "Hit";
-          e.timer = 0.2;
-          b.active = false;
-          this.sound("impact");
-          this.burst(b.x, b.y, d.color, 9);
-          this.texts.push({
-            x: e.x + d.w / 2,
-            y: e.y,
-            text: String(b.damage),
-            color: "#fff1b2",
-            life: 0.8,
-          });
-          if (e.hp <= 0) {
-            e.state = "Death";
-            e.timer = 24;
-            this.addXp(d.xp);
-            this.count(e.kind);
-            this.drops.push({
-              x: e.x + d.w / 2,
-              y: e.homeY + d.h - 15,
-              item: d.drop,
-              count: 1,
-              time: 0,
-            });
-            this.texts.push({
-              x: e.x,
-              y: e.y - 20,
-              text: `+${d.xp} XP`,
-              color: "#b8e8d5",
-              life: 1.2,
-            });
-          }
-          break;
-        }
-      }
-    }
-    for (let i = this.drops.length - 1; i >= 0; i--) {
-      const d = this.drops[i];
-      d.time += dt;
-      if (
-        Math.abs(d.x - p.x - 17) < 70 &&
-        Math.abs(d.y - p.y - 40) < 100 &&
-        d.time > 0.3
-      ) {
-        if (this.collect(d.item, d.count)) this.drops.splice(i, 1);
-        else d.time = -2;
-      }
-    }
+    this.combat.update(dt, input);
     this.effects(dt);
-    const targetX = Math.max(
+    const targetX = this.combat.boss.active?this.map.width-1280:Math.max(
       0,
       Math.min(this.map.width - 1280, p.x - 600 + p.facing * 100),
     );
@@ -580,123 +597,6 @@ export class World {
     if (this.autosave > 15) {
       this.autosave = 0;
       this.emit("save", "auto");
-    }
-  }
-  private updateEnemies(dt: number) {
-    const p = this.player;
-    for (const e of this.enemies) {
-      const d = enemyData[e.kind];
-      e.timer -= dt;
-      if (e.state === "Death") {
-        if (e.timer <= 0) {
-          e.hp = d.hp;
-          e.x = e.homeX;
-          e.y = e.homeY;
-          e.state = "Idle";
-          e.timer = 1;
-        }
-        continue;
-      }
-      if (Math.abs(e.x - p.x) > 1500) continue;
-      const dx = p.x - e.x,
-        dy = p.y - e.y,
-        distance = Math.hypot(dx, dy);
-      const chaseRange = e.kind === "manta" ? 400 : 300;
-      if (e.state === "Hit") {
-        e.x += e.vx * dt;
-        if (e.timer <= 0) e.state = "Chase";
-        continue;
-      }
-      if (e.state === "Idle" && e.timer <= 0) {
-        e.state = "Patrol";
-        e.timer = 2;
-      }
-      if (
-        (e.state === "Patrol" || e.state === "Idle") &&
-        distance < chaseRange
-      ) {
-        e.state = "Detect";
-        e.timer = 0.6;
-        e.facing = Math.sign(dx) || 1;
-      }
-      if (e.state === "Detect" && e.timer <= 0) {
-        e.state = "Chase";
-        e.timer = 0.5;
-      }
-      if (e.state === "Chase") {
-        e.facing = Math.sign(dx) || 1;
-        if (Math.abs(e.x - e.homeX) > 500 || distance > 600) {
-          e.state = "Return";
-        } else if (distance < (e.kind === "manta" ? 330 : 180)) {
-          e.state = "Attack";
-          e.timer = e.kind === "slime" ? 0.9 : 1.2;
-          e.attackX = p.x;
-          e.attackY = p.y + 20;
-          e.vx = e.facing * (e.kind === "crawler" ? 260 : 95);
-          if (e.kind === "slime") e.vy = -220;
-        }
-      }
-      if (e.state === "Patrol" && e.timer <= 0) {
-        e.facing *= -1;
-        e.timer = 2;
-      }
-      if (e.state === "Return") {
-        e.facing = Math.sign(e.homeX - e.x) || 1;
-        if (Math.abs(e.homeX - e.x) < 10) {
-          e.state = "Idle";
-          e.timer = 1;
-        }
-      }
-      if (e.kind === "manta") {
-        if (e.state === "Attack") {
-          if (e.timer < 0.7) {
-            const angle = Math.atan2(e.attackY - e.y, e.attackX - e.x);
-            e.x += Math.cos(angle) * 300 * dt;
-            e.y += Math.sin(angle) * 300 * dt;
-          }
-          if (e.timer <= 0) {
-            e.state = "Return";
-          }
-        } else {
-          e.y +=
-            (e.homeY + Math.sin(this.time * 1.6 + e.id) * 27 - e.y) *
-            Math.min(1, dt * 2);
-          if (e.state !== "Detect") e.x += e.facing * d.speed * dt;
-        }
-      } else {
-        let speed =
-          e.state === "Patrol" || e.state === "Return"
-            ? d.speed
-            : e.state === "Chase"
-              ? d.speed * 1.3
-              : 0;
-        if (e.state === "Attack" && (e.kind === "slime" || e.timer < 0.65))
-          speed = Math.abs(e.vx);
-        const next = e.x + e.facing * speed * dt;
-        const floor = this.map.platforms.find(
-          (t) => !t.oneWay && next >= t.x && next + d.w <= t.x + t.w,
-        );
-        if (floor) {
-          e.x = next;
-          e.vy += 990 * dt;
-          e.y = Math.min(floor.y - d.h, e.y + e.vy * dt);
-          if (e.y >= floor.y - d.h) e.vy = 0;
-        } else {
-          e.facing *= -1;
-          e.state = "Return";
-        }
-        if (e.state === "Attack" && e.timer <= 0) {
-          e.state = "Idle";
-          e.timer = 0.55;
-        }
-      }
-      if (
-        e.x < p.x + p.w &&
-        e.x + d.w > p.x &&
-        e.y < p.y + p.h &&
-        e.y + d.h > p.y
-      )
-        this.damage(d.damage, e.x + d.w / 2);
     }
   }
   private effects(dt: number) {
@@ -719,15 +619,25 @@ export class World {
   }
   snapshot(settings: Settings): SaveData {
     return {
-      version: 1,
+      version: 2,
+      battle: {
+        ...structuredClone(this.battle),
+        ...(this.combat.training
+          ? { skillSlots: [...this.combat.training.skillSlots] }
+          : {}),
+      },
       savedAt: Date.now(),
       region: this.region,
-      x: this.safe.x,
-      y: this.safe.y,
+      x:
+        this.combat.training?.x ??
+        (this.combat.boss.active ? 3820 : this.safe.x),
+      y:
+        this.combat.training?.y ??
+        (this.combat.boss.active ? 716 : this.safe.y),
       level: this.player.level,
       xp: this.player.xp,
-      hp: this.player.hp,
-      energy: this.player.energy,
+      hp: this.combat.training?.hp ?? this.player.hp,
+      energy: this.combat.training?.energy ?? this.player.energy,
       inventory: structuredClone(this.inventory),
       progress: structuredClone(this.progress),
       settings: { ...settings },

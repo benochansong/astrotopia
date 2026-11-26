@@ -26,7 +26,8 @@ export class Input {
           e.preventDefault();
         if (!e.repeat) {
           this.pressed.add(e.code);
-          if (["Escape", "KeyI", "KeyM"].includes(e.code)) this.onMenu(e.code);
+          if (["Escape", "KeyI", "KeyM", "KeyC", "KeyV"].includes(e.code))
+            this.onMenu(e.code);
         }
         this.held.add(e.code);
       },
@@ -48,6 +49,21 @@ export class Input {
       dash: this.pressed.has("ShiftLeft") || this.pressed.has("ShiftRight"),
       down: this.held.has("KeyS") || this.held.has("ArrowDown"),
       attack: this.held.has("KeyJ"),
+      special: this.pressed.has("KeyK"),
+      weaponSlot: this.pressed.has("Digit1")
+        ? 0
+        : this.pressed.has("Digit2")
+          ? 1
+          : undefined,
+      skillSlot: this.pressed.has("KeyQ")
+        ? 0
+        : this.pressed.has("KeyE")
+          ? 1
+          : this.pressed.has("KeyR")
+            ? 2
+            : this.pressed.has("KeyT")
+              ? 3
+              : undefined,
       interact: this.pressed.has("KeyF"),
       heal: this.pressed.has("KeyH"),
     };

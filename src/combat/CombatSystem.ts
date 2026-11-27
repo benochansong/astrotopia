@@ -154,6 +154,8 @@ export class CombatSystem {
     const w = this.w;
     if (e.state === "Death" || (e.kind === "worm" && e.state === "Retreat"))
       return;
+    a = w.classes.modifyAttack(a, e);
+    const previousHp = e.hp;
     const result = DamageSystem.resolve(
       e,
       a,
@@ -169,6 +171,7 @@ export class CombatSystem {
       amount -= block;
     }
     e.hp = Math.max(0, e.hp - amount);
+    w.classes.onHit(e, a, Math.min(previousHp, amount), result.critical);
     e.flash = 0.12;
     if (!dot) {
       this.combo++;
@@ -182,7 +185,7 @@ export class CombatSystem {
       }
       if (result.weak) w.count("weakness");
       if (
-        e.kind !== "titan" &&
+        !w.classes.isBoss(e) &&
         e.kind !== "dummy" &&
         (e.staggerGuard ?? 0) <= 0
       ) {
@@ -220,7 +223,7 @@ export class CombatSystem {
         a.status,
         Math.max(2, w.stats.attack * 0.12),
         !!e.elite,
-        e.kind === "titan" || e.kind === "sentinel" || e.kind === "conduit",
+        w.classes.isBoss(e),
         e.ccImmunity,
       );
       if (e.statuses.some((s) => s.id === "freeze" || s.id === "stun"))
@@ -323,13 +326,14 @@ export class CombatSystem {
       Math.sin(angle) * speed,
     );
   }
-  receive(amount: number, element: Element) {
+  receive(amount: number, element: Element, hostile = true) {
     const s = this.w.stats;
     let damage = Math.max(
       1,
       amount * difficulties[this.w.settings.difficulty].damage - s.defense,
     );
     if (element !== "physical") damage *= 1 - s.elementResist;
+    damage = this.w.classes.receive(damage, hostile);
     damage = this.skills.absorb(damage);
     this.combo = 0;
     this.comboTimer = 0;
@@ -394,7 +398,10 @@ export class CombatSystem {
     }
     this.hazards = this.hazards.filter(
       (h) =>
-        h.duration > 0 && h.x > -300 && h.x < w.map.width + 300 && h.y < 1200,
+        h.duration > 0 &&
+        h.x > -300 &&
+        h.x < w.map.width + 300 &&
+        h.y < (w.planetId === "aquaria" ? 3000 : 1200),
     );
     StatusEffectSystem.tick(this.playerStatuses, dt, (damage) => {
       if (w.player.invulnerable <= 0)

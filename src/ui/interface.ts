@@ -124,7 +124,7 @@ export class Interface {
     this.hud.hidden = true;
     this.screen.hidden = false;
     this.close();
-    this.screen.innerHTML = `<section class="title-screen"><div class="brand-top"><span class="orbit-mark">✧</span> INTERSTELLAR EXPLORATION PROGRAM <span class="phase-tag">PHASE 06</span></div><div class="title-copy"><p class="eyebrow">EXTREME WORLDS</p><h1>ASTRO<span>TOPIA</span></h1><p class="tagline">MASTER THE ENVIRONMENT.</p><p class="title-description">낯선 별에 남기는, 당신의 첫 번째 발자국.<br>아무도 기록하지 않은 세계가 기다립니다.</p></div><nav class="main-menu" aria-label="메인 메뉴"><button class="primary start" data-action="new"><span class="button-glyph">✦</span>${ko.newGame}<span class="button-end">NEW EXPEDITION</span></button><button class="continue" data-action="continue" ${canContinue ? "" : "disabled"}><span class="button-glyph">⌁</span>${ko.continue}<span class="button-end">${canContinue ? "RESUME EXPEDITION" : "저장된 탐험 없음"}</span></button><div class="menu-links"><button data-action="settings">${ko.settings}</button><span></span><button data-action="controls">${ko.controls}</button><span></span><button data-action="credits">${ko.credits}</button></div></nav><div class="planet-label"><span class="crosshair">+</span><p>DESTINATION 001</p><h2>EDEN</h2><div>미탐사 생명체 행성</div><dl><dt>중력</dt><dd>0.9 G</dd><dt>대기</dt><dd>호흡 가능</dd></dl></div><footer class="title-footer"><span><i></i> EXPLORATION SYSTEMS ONLINE</span><span>2478 CE <b> / </b> PROJECT ASTROTOPIA</span><span>키보드 · PC 브라우저 권장</span></footer>${error ? `<p class="storage-error">${escape(error)}</p>` : ""}</section>`;
+    this.screen.innerHTML = `<section class="title-screen"><div class="brand-top"><span class="orbit-mark">✧</span> INTERSTELLAR EXPLORATION PROGRAM <span class="phase-tag">PHASE 07</span></div><div class="title-copy"><p class="eyebrow">PATH OF THE EXPLORER</p><h1>ASTRO<span>TOPIA</span></h1><p class="tagline">CHOOSE YOUR PATH. DEFINE YOUR LEGACY.</p><p class="title-description">낯선 별에 남기는, 당신의 첫 번째 발자국.<br>아무도 기록하지 않은 세계가 기다립니다.</p></div><nav class="main-menu" aria-label="메인 메뉴"><button class="primary start" data-action="new"><span class="button-glyph">✦</span>${ko.newGame}<span class="button-end">NEW EXPEDITION</span></button><button class="continue" data-action="continue" ${canContinue ? "" : "disabled"}><span class="button-glyph">⌁</span>${ko.continue}<span class="button-end">${canContinue ? "RESUME EXPEDITION" : "저장된 탐험 없음"}</span></button><div class="menu-links"><button data-action="settings">${ko.settings}</button><span></span><button data-action="controls">${ko.controls}</button><span></span><button data-action="credits">${ko.credits}</button></div></nav><div class="planet-label"><span class="crosshair">+</span><p>DESTINATION 001</p><h2>EDEN</h2><div>미탐사 생명체 행성</div><dl><dt>중력</dt><dd>0.9 G</dd><dt>대기</dt><dd>호흡 가능</dd></dl></div><footer class="title-footer"><span><i></i> EXPLORATION SYSTEMS ONLINE</span><span>2478 CE <b> / </b> PROJECT ASTROTOPIA</span><span>키보드 · PC 브라우저 권장</span></footer>${error ? `<p class="storage-error">${escape(error)}</p>` : ""}</section>`;
   }
   game() {
     this.screen.hidden = true;
@@ -144,7 +144,7 @@ export class Interface {
       hp = Math.max(0, (p.hp / w.stats.hp) * 100),
       xp = p.level === w.levelCap ? 100 : (p.xp / xpRequired(p.level)) * 100;
     const nearby = w.nearby();
-    const html = `<div class="player-panel glass"><div class="portrait">${portrait}<span>${p.level}</span></div><div class="vitals"><div class="player-heading">EXPLORER <small>탐험가</small></div><div class="stat-line"><span>HP</span><div class="bar health"><i style="width:${hp}%"></i></div><b>${Math.ceil(p.hp)}<small> / ${w.stats.hp}</small></b></div><div class="stat-line"><span>EN</span><div class="bar energy"><i style="width:${(100 * p.energy) / w.stats.energy}%"></i></div><b>${Math.floor(p.energy)}<small> / ${Math.round(w.stats.energy)}</small></b></div></div></div><div class="location glass"><div class="location-top"><span>✧ ${w.planetId.toUpperCase()}</span><button aria-label="일시정지" title="일시정지 (ESC)" data-action="pause">Ⅱ</button></div><strong>${w.combat.zone.name}</strong><small>${w.map.en}</small><div class="environment"><span>${w.space.gravity} G</span><span>Lv.${w.combat.zone.level} · O₂</span></div><button class="minimap" aria-label="지역 지도 열기" data-action="map">${this.minimap(w)}<span>M · 지역 지도</span></button></div><aside class="quest-panel"><p class="eyebrow">${q ? `MISSION ${String(w.progress.quest + 1).padStart(2, "0")}` : "EXPEDITION LOG"}</p><h3>${q ? q.name : "계속되는 모험"}</h3>${
+    const html = `<div class="player-panel glass"><div class="portrait">${portrait}<span>${p.level}</span></div><div class="vitals"><div class="player-heading">${w.classes.definition?.icon ?? "✦"} ${w.classes.name}</div><div class="stat-line"><span>HP</span><div class="bar health"><i style="width:${hp}%"></i></div><b>${Math.ceil(p.hp)}<small> / ${Math.round(w.stats.hp)}</small></b></div><div class="stat-line"><span>EN</span><div class="bar energy"><i style="width:${(100 * p.energy) / w.stats.energy}%"></i></div><b>${Math.floor(p.energy)}<small> / ${Math.round(w.stats.energy)}</small></b></div></div></div><div class="location glass"><div class="location-top"><span>✧ ${w.planetId.toUpperCase()}</span><button aria-label="일시정지" title="일시정지 (ESC)" data-action="pause">Ⅱ</button></div><strong>${w.combat.zone.name}</strong><small>${w.map.en}</small><div class="environment"><span>${w.space.gravity} G</span><span>Lv.${w.combat.zone.level} · O₂</span></div><button class="minimap" aria-label="지역 지도 열기" data-action="map">${this.minimap(w)}<span>M · 지역 지도</span></button></div><aside class="quest-panel"><p class="eyebrow">${q ? `MISSION ${String(w.progress.quest + 1).padStart(2, "0")}` : "EXPEDITION LOG"}</p><h3>${q ? q.name : "계속되는 모험"}</h3>${
       q
         ? `<p>${q.story}</p><ul>${q.goals
             .map(([id, label, n]) => {
@@ -273,7 +273,7 @@ export class Interface {
       content = characterPanel(w) + environmentPanel(w);
     }
     if (modal === "skills" && w) {
-      heading = "스킬 관리";
+      heading = "개척자 아카데미 · 직업과 스킬";
       eyebrow = "COMBAT PROTOCOLS";
       content = skillsPanel(w);
     }
@@ -374,7 +374,7 @@ export class Interface {
       heading = "작은 발자국에서 시작된 세계";
       eyebrow = "PROJECT ASTROTOPIA";
       content =
-        '<p>기획 · ASTROTOPIA</p><p>게임 엔진 · Phaser 3<br>개발 · TypeScript / Vite<br>아트 · 자체 제작 절차적 벡터 그래픽<br>사운드 · Web Audio 합성</p><p class="muted">외부 상용 게임의 이미지, 캐릭터, 음악을 사용하지 않았습니다.<br>EXTREME WORLDS · DEVELOPMENT PHASE 06</p>';
+        '<p>기획 · ASTROTOPIA</p><p>게임 엔진 · Phaser 3<br>개발 · TypeScript / Vite<br>아트 · 자체 제작 절차적 벡터 그래픽<br>사운드 · Web Audio 합성</p><p class="muted">외부 상용 게임의 이미지, 캐릭터, 음악을 사용하지 않았습니다.<br>PATH OF THE EXPLORER · DEVELOPMENT PHASE 07</p>';
     }
     if (modal === "confirm") {
       heading = "새로운 모험을 시작할까요?";

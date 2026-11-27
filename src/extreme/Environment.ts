@@ -170,7 +170,11 @@ export class PlanetEnvironmentSystem {
           : 1;
     s.temperature = Math.max(
       0,
-      Math.min(100, s.temperature + rate * dt * factor),
+      Math.min(
+        100,
+        s.temperature +
+          rate * dt * factor * (rate > 0 ? w.classes.environmentFactor : 1),
+      ),
     );
     if (this.sheltered)
       w.survival.state.oxygen = Math.min(
@@ -195,7 +199,9 @@ export class PlanetEnvironmentSystem {
           s.radiation +
             (this.sheltered
               ? -20
-              : (this.weather.active ? 9 : 4) * (1 - protection / 100)) *
+              : (this.weather.active ? 9 : 4) *
+                (1 - protection / 100) *
+                w.classes.environmentFactor) *
               dt,
         ),
       );

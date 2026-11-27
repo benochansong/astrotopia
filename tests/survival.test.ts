@@ -41,7 +41,7 @@ describe("Survival Protocol", () => {
     old.version = 2;
     delete old.survival;
     const s = parseSave(JSON.stringify(old))!;
-    expect(s.version).toBe(6);
+    expect(s.version).toBe(7);
     expect(s.progress.quest).toBe(10);
     expect(s.battle).toEqual(w.battle);
     expect(s.inventory.iron).toBe(10);

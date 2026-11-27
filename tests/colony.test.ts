@@ -94,7 +94,7 @@ describe("colony construction and persistence", () => {
     old.version = 3;
     delete old.colony;
     const save = parseSave(JSON.stringify(old))!;
-    expect(save.version).toBe(6);
+    expect(save.version).toBe(7);
     const migrated = new World(save);
     expect(
       migrated.colony.state.buildings.filter((b) => b.legacy),

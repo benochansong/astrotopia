@@ -1,3 +1,5 @@
+import { classHud, classPanel, classStats } from "./class-ui";
+import { classSkills } from "../classes/catalog";
 import type { World } from "../core/world";
 import {
   gearTemplates,
@@ -33,15 +35,28 @@ export function battleControls(w: World) {
     c = w.combat;
   return `<div class="battle-quickbar"><div class="weapon-quick">${b.weaponSlots.map((id, i) => `<button data-action="weapon-switch" data-value="${i}" class="${b.activeSlot === i ? "selected" : ""}" ${id ? "" : "disabled"}><kbd>${i + 1}</kbd><span style="color:${id ? weapons[id].color : "#888"}">${id ? weapons[id].name : "빈 무기 슬롯"}</span></button>`).join("")}<span class="weapon-special"><kbd>J</kbd> 공격 <kbd>K</kbd> ${c.weapons.specialCooldown > 0 ? c.weapons.specialCooldown.toFixed(1) + "s" : "특수"}</span></div><div class="skill-quick">${b.skillSlots
     .map((id, i) => {
-      const s = id ? skills[id] : null,
-        locked = !!id && !b.unlockedSkills.includes(id) && !c.training,
-        cd =
-          id === "dash"
+      const job = w.classes.state.slots[i],
+        jobData = job ? classSkills[job] : null;
+      const s = jobData
+          ? {
+              ...jobData,
+              icon: w.classes.definition?.icon ?? "✦",
+              energy: w.classes.energyCost(jobData),
+            }
+          : id
+            ? skills[id]
+            : null,
+        locked = job
+          ? !w.classes.usable(job)
+          : !!id && !b.unlockedSkills.includes(id) && !c.training,
+        cd = job
+          ? (w.classes.state.cooldowns[job] ?? 0)
+          : id === "dash"
             ? w.player.dashCooldown
             : id
               ? (c.skills.cooldowns[id] ?? 0)
               : 0;
-      return `<button data-action="cast" data-value="${i}" class="${locked ? "locked" : cd > 0 ? "cooldown" : s && w.player.energy < s.energy ? "insufficient" : ""}" title="${s?.description ?? "V에서 스킬 배치"}"><kbd>${["Q", "E", "R", "T"][i]}</kbd><b>${s?.icon ?? "·"}</b><span>${locked ? `Lv.${s!.level}` : cd > 0 ? cd.toFixed(1) + "s" : (s?.name ?? "빈 슬롯")}</span></button>`;
+      return `<button data-action="cast" data-value="${i}" class="${locked ? "locked" : cd > 0 ? "cooldown" : s && w.player.energy < s.energy ? "insufficient" : ""}" title="${job ? w.classes.castReason(job) || s?.description : (s?.description ?? "V에서 스킬 배치")}"><kbd>${["Q", "E", "R", "T"][i]}</kbd><b>${s?.icon ?? "·"}</b><span>${locked ? `Lv.${s!.level}` : cd > 0 ? cd.toFixed(1) + "s" : (s?.name ?? "빈 슬롯")}</span></button>`;
     })
     .join(
       "",
@@ -51,13 +66,13 @@ export function battleHud(w: World) {
   const c = w.combat,
     boss = c.boss,
     e = boss.enemy;
-  return `<div class="battle-status">${c.skills.shieldTime > 0 ? `<span>⬡ 보호막 ${c.skills.shieldTime.toFixed(1)}s · ${Math.ceil(c.skills.shield)}</span>` : ""}${c.playerStatuses.map((s) => `<span style="color:${statusInfo[s.id].color}">${statusInfo[s.id].icon} ${statusInfo[s.id].name} ${s.time.toFixed(1)}s</span>`).join("")}</div>${c.combo > 1 ? `<div class="combo-count ${c.combo >= 20 ? "high" : ""}"><b>${c.combo}</b> HIT<span>${c.combo >= 10 ? "CHAIN REACTION" : "COMBO"}</span></div>` : ""}${boss.active && e ? `<section class="boss-hud"><div><span>ANCIENT GUARDIAN</span><strong>EDEN TITAN</strong><b>${["AWAKENING", "CRYSTAL RAGE", "CORE OVERLOAD"][boss.phase]}</b></div><div class="boss-health"><i style="width:${(100 * e.hp) / e.maxHp}%"></i><em style="left:35%"></em><em style="left:70%"></em></div><p>${Math.ceil(e.hp).toLocaleString()} / ${e.maxHp.toLocaleString()} <span>${boss.coreOpen ? "◇ 코어 노출 · 피해 증가" : boss.stage === "prepare" ? "⚠ 공격 예고 · 위험 영역을 피하세요" : "회피 후 반격 기회를 노리세요"}</span></p>${e.statuses.map((s) => `<small>${statusInfo[s.id].icon} ${s.time.toFixed(1)}s</small>`).join("")}</section>` : ""}${boss.intro > 0 ? '<div class="boss-intro"><p>고대의 수호자가 깨어납니다</p><h2>EDEN TITAN</h2><button data-action="boss-skip">등장 연출 건너뛰기</button></div>' : ""}${boss.victory > 0 ? '<div class="boss-victory"><span>GUARDIAN DEFEATED</span><h2>에덴 타이탄 격파</h2><p>전리품을 회수하고 불시착 지점으로 돌아가세요.</p></div>' : ""}${c.training ? `<div class="training-hud"><b>전투 훈련장</b><span>${weapons[c.training.weapon].name} · ${c.training.hits} HIT · 누적 ${Math.round(c.training.damage)} DMG · ${Math.round(c.training.damage / Math.max(1, c.training.elapsed))} DPS</span><button data-action="character">C 무기 시험</button><button data-action="training-end">훈련 종료</button></div>` : ""}`;
+  return `${classHud(w)}<div class="battle-status">${c.skills.shieldTime > 0 ? `<span>⬡ 보호막 ${c.skills.shieldTime.toFixed(1)}s · ${Math.ceil(c.skills.shield)}</span>` : ""}${c.playerStatuses.map((s) => `<span style="color:${statusInfo[s.id].color}">${statusInfo[s.id].icon} ${statusInfo[s.id].name} ${s.time.toFixed(1)}s</span>`).join("")}</div>${c.combo > 1 ? `<div class="combo-count ${c.combo >= 20 ? "high" : ""}"><b>${c.combo}</b> HIT<span>${c.combo >= 10 ? "CHAIN REACTION" : "COMBO"}</span></div>` : ""}${boss.active && e ? `<section class="boss-hud"><div><span>ANCIENT GUARDIAN</span><strong>EDEN TITAN</strong><b>${["AWAKENING", "CRYSTAL RAGE", "CORE OVERLOAD"][boss.phase]}</b></div><div class="boss-health"><i style="width:${(100 * e.hp) / e.maxHp}%"></i><em style="left:35%"></em><em style="left:70%"></em></div><p>${Math.ceil(e.hp).toLocaleString()} / ${e.maxHp.toLocaleString()} <span>${boss.coreOpen ? "◇ 코어 노출 · 피해 증가" : boss.stage === "prepare" ? "⚠ 공격 예고 · 위험 영역을 피하세요" : "회피 후 반격 기회를 노리세요"}</span></p>${e.statuses.map((s) => `<small>${statusInfo[s.id].icon} ${s.time.toFixed(1)}s</small>`).join("")}</section>` : ""}${boss.intro > 0 ? '<div class="boss-intro"><p>고대의 수호자가 깨어납니다</p><h2>EDEN TITAN</h2><button data-action="boss-skip">등장 연출 건너뛰기</button></div>' : ""}${boss.victory > 0 ? '<div class="boss-victory"><span>GUARDIAN DEFEATED</span><h2>에덴 타이탄 격파</h2><p>전리품을 회수하고 불시착 지점으로 돌아가세요.</p></div>' : ""}${c.training ? `<div class="training-hud"><b>전투 훈련장</b><span>${weapons[c.training.weapon].name} · ${c.training.hits} HIT · 누적 ${Math.round(c.training.damage)} DMG · ${Math.round(c.training.damage / Math.max(1, c.training.elapsed))} DPS</span><button data-action="character">C 무기 시험</button><button data-action="training-end">훈련 종료</button></div>` : ""}`;
 }
 export function characterPanel(w: World) {
   const base = baseStats(w.player.level),
     stats = w.stats,
     b = w.battle;
-  return `<div class="character-summary"><span>EXPLORER · Lv.${w.player.level}</span><strong>${b.credits.toLocaleString()} CR</strong><span>${b.titles.join(" · ") || "칭호 없음"} · 발견 생명체 ${b.discovered.filter((id) => id !== "dummy" && id !== "titan").length}/10</span></div><div class="character-columns"><section class="stats-panel"><h3>능력치 <small>기본 + 장비</small></h3>${Object.entries(
+  return `${classStats(w)}<div class="character-summary"><span>${w.classes.name} · Lv.${w.player.level}</span><strong>${b.credits.toLocaleString()} CR</strong><span>${b.titles.join(" · ") || "칭호 없음"} · 발견 생명체 ${b.discovered.filter((id) => id !== "dummy" && id !== "titan").length}/10</span></div><div class="character-columns"><section class="stats-panel"><h3>능력치 <small>기본 + 장비</small></h3>${Object.entries(
     stats,
   )
     .map(
@@ -111,7 +126,7 @@ export function gearDetail(w: World, id: string, confirm = false) {
   }</p><div>${t.weapon ? `<button data-action="equip" data-value="primary:${id}">주무기 장착</button><button data-action="equip" data-value="secondary:${id}">보조 무기 장착</button>` : `<button data-action="equip" data-value="${t.slot}:${id}">장착</button>`}<button data-action="${confirm ? "sell-confirm" : "sell"}" data-value="${id}" ${g.locked || Object.values(w.battle.equipment).includes(id) ? "disabled" : ""}>${confirm ? "판매 확정 · 되돌릴 수 없음" : `판매 · ${Math.round(rarities[g.rarity].mult * 20)} CR`}</button></div></section>`;
 }
 export function skillsPanel(w: World) {
-  return `<div class="skill-slot-overview">${w.battle.skillSlots.map((id, i) => `<div><kbd>${["Q", "E", "R", "T"][i]}</kbd> ${id ? skills[id].name : "빈 슬롯"}<button data-action="skill-clear" data-value="${i}">비우기</button></div>`).join("")}</div><div class="skill-library">${Object.entries(
+  return `${classPanel(w)}<details class="common-skills" ${w.classes.state.classId ? "" : "open"}><summary>기존 공통 스킬 · 모든 직업 사용 가능</summary><div class="skill-slot-overview">${w.battle.skillSlots.map((id, i) => `<div><kbd>${["Q", "E", "R", "T"][i]}</kbd> ${w.classes.state.slots[i] ? classSkills[w.classes.state.slots[i]!].name : id ? skills[id].name : "빈 슬롯"}<button data-action="skill-clear" data-value="${i}">비우기</button></div>`).join("")}</div><div class="skill-library">${Object.entries(
     skills,
   )
     .map(([id, s]) => {
@@ -121,5 +136,5 @@ export function skillsPanel(w: World) {
     })
     .join(
       "",
-    )}</div><p class="muted">SHIFT는 항상 부스트 대시입니다. 스킬을 중복 배치하면 이전 슬롯과 교환합니다. 잠긴 스킬은 훈련장에서만 시험할 수 있습니다.</p>`;
+    )}</div><p class="muted">SHIFT는 항상 부스트 대시입니다. 스킬을 중복 배치하면 이전 슬롯과 교환합니다. 잠긴 스킬은 훈련장에서만 시험할 수 있습니다.</p></details>`;
 }

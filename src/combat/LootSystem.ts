@@ -14,6 +14,9 @@ export class LootSystem {
     const candidates = Object.keys(gearTemplates).filter(
       (id) =>
         id !== "titan" &&
+        (!id.startsWith("class_") ||
+          (this.w.classes.state.tier >= 2 &&
+            id.startsWith("class_" + this.w.classes.state.classId + "_"))) &&
         !id.includes("_mk") &&
         (!gearTemplates[id].weapon ||
           weapons[gearTemplates[id].weapon!].level <= this.w.player.level),
@@ -52,7 +55,13 @@ export class LootSystem {
     if (e.kind === "dummy" || e.noLoot || this.w.combat.training) return;
     const w = this.w,
       d = enemyData[e.kind];
-    w.addXp(Math.round(d.xp * (e.elite ? 3 : 1)));
+    const jobBonus =
+      w.classes.state.classId === "ranger" ||
+      (w.classes.state.classId === "cyberBlade" &&
+        w.combat.weapons.id === "blade")
+        ? w.classes.bonus
+        : 0;
+    w.addXp(Math.round(d.xp * (e.elite ? 3 : 1) * (1 + jobBonus)));
     w.battle.credits += Math.round(d.xp * (e.elite ? 2 : 0.45));
     w.count(e.kind);
     w.survival.discovery.record("생명체 분석 · " + d.name, e.elite ? 5 : 2);

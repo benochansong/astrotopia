@@ -101,7 +101,12 @@ export class PlanetPhysicsSystem {
         );
         s.jetEnergy = Math.max(
           0,
-          s.jetEnergy - dt * [0, 20, 14, 12, 9][this.jetTier],
+          s.jetEnergy -
+            dt *
+              [0, 20, 14, 12, 9][this.jetTier] *
+              (w.classes.state.classId === "explorer"
+                ? 1 - w.classes.bonus
+                : 1),
         );
         w.space.once("jet_lunaris");
       }

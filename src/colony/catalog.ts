@@ -87,6 +87,14 @@ const d = (
   ...extra,
 });
 export const buildings = {
+  academy: d(
+    "PIONEER ACADEMY",
+    "research",
+    { iron: 12, circuit: 4 },
+    5,
+    "V: 6명의 교관 · 전직, 도전, 숙련도와 장비 설계",
+    { hp: 650 },
+  ),
   sealedHabitat: d(
     "밀폐형 해저 거주지",
     "habitat",

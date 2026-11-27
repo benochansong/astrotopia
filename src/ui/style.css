@@ -2602,3 +2602,254 @@ progress::-webkit-progress-value {
   width: 100%;
   accent-color: #dba478;
 }
+.class-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px;
+  background: linear-gradient(120deg, #132f37, #172438);
+  border: 1px solid #638c8d55;
+  border-radius: 12px;
+}
+.class-header small {
+  letter-spacing: 2px;
+  color: #93bebb;
+}
+.class-header h2 {
+  font-size: 28px;
+  letter-spacing: 2px;
+  margin: 10px 0;
+}
+.class-header p {
+  color: #a8c9c1;
+}
+.class-header .class-portrait {
+  width: 110px;
+}
+.class-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 18px 0;
+}
+.class-tabs button {
+  flex: 1;
+  padding: 12px;
+}
+.class-tabs .selected,
+.class-card.selected {
+  border-color: #a3d5b7;
+  background: #21413d;
+}
+.class-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.class-grid.two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.class-card {
+  border: 1px solid #638c8d55;
+  border-radius: 10px;
+  padding: 18px;
+  background: #132a30;
+}
+.class-card h3 {
+  font-size: 19px;
+  color: var(--class-color, #d3e6c9);
+  margin: 8px 0;
+}
+.class-card small,
+.class-meta {
+  font-size: 11px;
+  color: #91b6ae;
+  line-height: 1.8;
+}
+.class-card p {
+  font-size: 12px;
+  line-height: 1.65;
+}
+.class-portrait {
+  width: 100px;
+  height: 100px;
+  display: block;
+  margin: auto;
+}
+.class-card blockquote {
+  font-size: 12px;
+  margin: 10px 0;
+  padding-left: 10px;
+  border-left: 2px solid var(--class-color);
+  color: #c5cfbf;
+  min-height: 36px;
+}
+.class-actions {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+.class-actions button,
+.class-card button,
+.class-skill button {
+  padding: 7px 9px;
+  font-size: 11px;
+  margin: 3px 3px 3px 0;
+}
+.class-note {
+  font-size: 12px;
+  padding: 12px;
+  border-left: 2px solid #ddb980;
+  background: #ddbb7710;
+  line-height: 1.8;
+}
+.class-skill-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.class-branch {
+  margin: 22px 0 12px;
+  color: #b9d5c3;
+  font-size: 15px;
+  letter-spacing: 1px;
+}
+.class-skill {
+  padding: 14px;
+  background: #142a30;
+  border: 1px solid #51726d66;
+  border-radius: 8px;
+}
+.class-skill.learned {
+  border-top: 3px solid #9bbd9c;
+}
+.class-skill h4 {
+  font-size: 13px;
+  margin: 9px 0;
+}
+.class-skill p {
+  font-size: 12px;
+  line-height: 1.7;
+  color: #b7c5bc;
+}
+.class-skill small {
+  font-size: 10px;
+  line-height: 1.7;
+  color: #8dafaa;
+  display: block;
+}
+.class-skill strong {
+  float: right;
+  color: #e9c17c;
+}
+.class-slots {
+  display: flex;
+}
+.class-slots button {
+  flex: 1;
+}
+.class-preset {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 9px 0;
+}
+.class-preset b {
+  flex: 1;
+  font-size: 12px;
+}
+.class-metrics {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+.class-metrics div {
+  background: #132e31;
+  padding: 12px;
+}
+.class-metrics small {
+  display: block;
+  font-size: 10px;
+  color: #8daaa3;
+}
+.class-metrics b {
+  font-size: 20px;
+}
+.common-skills {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #668b8b66;
+}
+.common-skills summary {
+  cursor: pointer;
+  color: #d4cfaa;
+  margin-bottom: 12px;
+}
+.class-detail {
+  background: #142b30;
+  padding: 12px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+}
+.class-detail p {
+  font-size: 12px;
+}
+.class-gauge {
+  position: absolute;
+  bottom: 150px;
+  left: 220px;
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  color: var(--class-color);
+  font-size: 10px;
+  padding: 7px 10px;
+  background: #11292eea;
+  border: 1px solid #668b8b55;
+  border-radius: 6px;
+  pointer-events: auto;
+}
+.class-gauge progress {
+  width: 85px;
+  height: 6px;
+  accent-color: var(--class-color);
+}
+.class-gauge button {
+  font-size: 10px;
+  padding: 5px;
+}
+.class-gauge button.ready {
+  border-color: var(--class-color);
+  box-shadow: 0 0 12px #8fd5dd66;
+}
+.class-trial-hud {
+  position: absolute;
+  top: 160px;
+  left: 320px;
+  max-width: 620px;
+  background: #102c35ee;
+  padding: 10px 16px;
+  border: 1px solid #80c1bb88;
+  pointer-events: auto;
+  font-size: 11px;
+  border-radius: 8px;
+}
+.class-trial-hud p {
+  margin: 5px 0;
+}
+.class-trial-hud button {
+  padding: 5px;
+  font-size: 10px;
+}
+.class-trial-card {
+  background: #163540;
+  padding: 18px;
+  border: 1px solid #75bdb2;
+  margin: 12px 0;
+}
+.player-heading {
+  font-size: 10px !important;
+}
+.player-heading small {
+  font-size: 9px;
+}

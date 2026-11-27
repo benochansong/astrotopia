@@ -130,6 +130,8 @@ export interface Hazard extends AttackShape {
   label: string;
 }
 export interface AttackPayload {
+  classSkill?: boolean;
+  summon?: boolean;
   damage: number;
   element: Element;
   crit: number;

@@ -1,3 +1,4 @@
+import { ClassSystem } from "../classes/ClassSystem";
 import { ExtremeSystem } from "../extreme/ExtremeSystem";
 import { extremeDeposits } from "../extreme/regions";
 import {
@@ -86,6 +87,7 @@ export class World {
   colony = new ColonySystem(this);
   space = new SpaceSystem(this);
   extreme = new ExtremeSystem(this);
+  classes = new ClassSystem(this);
   get planetId() {
     return this.space.planet;
   }
@@ -128,7 +130,7 @@ export class World {
       gear?.template.includes("_mk")
     )
       stats.attack *= 1.05;
-    return stats;
+    return this.classes.applyStats(stats);
   }
   region: RegionId = "crash";
   progress: Progress = newProgress();
@@ -184,6 +186,7 @@ export class World {
         hp: save.hp || maxHp(save.level),
         energy: save.energy,
       });
+      this.classes.initialize(save.classes);
       this.inventory = structuredClone(save.inventory);
       this.progress = structuredClone(save.progress);
       if (save.hp === 0) {
@@ -305,6 +308,7 @@ export class World {
       p.xp -= xpRequired(p.level);
       p.level++;
       this.combat.unlock();
+      this.classes.sync();
       p.hp = this.stats.hp;
       this.burst(p.x + 17, p.y + 30, "#e8df98", 40);
       this.toast(`LEVEL UP · 탐험가 Lv.${p.level}`);
@@ -355,11 +359,13 @@ export class World {
     if (this.player.invulnerable <= 0) this.extreme.vehicles.damage(amount);
     const p = this.player;
     if (p.invulnerable > 0 || this.dead > 0 || this.combat.training) return;
-    const actual = this.combat.receive(amount, element);
+    const actual = this.combat.receive(amount, element, fromX !== p.x);
     this.mining = null;
     p.hp = Math.max(0, p.hp - actual);
     p.invulnerable = 1.1;
-    p.vx = (p.x < fromX ? -1 : 1) * 280;
+    p.vx =
+      (p.x < fromX ? -1 : 1) *
+      (this.classes.state.classId === "guardian" ? 140 : 280);
     p.vy = -150;
     p.animation = "Hit";
     p.animationTime = 0.25;
@@ -374,6 +380,8 @@ export class World {
       life: 1,
     });
     if (p.hp === 0) {
+      this.classes.clearEffects();
+      this.combat.reset();
       this.dead = 2.8;
       p.animation = "Death";
       this.sound("death");
@@ -395,6 +403,7 @@ export class World {
   }
   enterRegion(id: RegionId, x?: number) {
     if (this.extreme.state.vehicle) this.extreme.state.vehicle.mounted = false;
+    this.classes.clearEffects();
     this.combat.reset();
     this.survival.sentinel.abort();
     this.space.combat.abort();
@@ -644,6 +653,7 @@ export class World {
     this.survival.update(dt, input);
     this.extreme.update(dt, input);
     if (this.dead > 0) return;
+    this.classes.update(dt, input);
     this.combat.beforeMovement(dt, input);
     const p = this.player;
     if (input.interact) this.interact();
@@ -777,8 +787,12 @@ export class World {
     this.texts = this.texts.filter((t) => t.life > 0);
   }
   snapshot(settings: Settings): SaveData {
+    if (this.classes.trialReturn)
+      return structuredClone(this.classes.trialReturn);
+    this.classes.sync();
     return {
-      version: 6,
+      version: 7,
+      classes: structuredClone(this.classes.state),
       extreme: structuredClone(this.extreme.state),
       space: this.space.snapshot(),
       colony: structuredClone(this.colony.state),

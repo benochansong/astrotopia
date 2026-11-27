@@ -1,3 +1,6 @@
+import { newClass } from "../classes/types";
+import { classes } from "../classes/catalog";
+import { validClass } from "./class-schema";
 import { defaultBindings, bindingCodes } from "../systems/bindings";
 import { newExtreme } from "../extreme/types";
 import { validExtreme } from "./extreme-schema";
@@ -75,10 +78,14 @@ export function parseSave(raw: string | null): SaveData | null {
     const s = JSON.parse(raw);
     if (
       !object(s) ||
-      ![1, 2, 3, 4, 5, 6].includes(Number(s.version)) ||
+      ![1, 2, 3, 4, 5, 6, 7].includes(Number(s.version)) ||
       !regionOrder.includes(s.region as never) ||
       !finite(s.savedAt, 0, 1e15) ||
-      !finite(s.level, 1, s.version === 6 ? 90 : s.version === 5 ? 30 : 15) ||
+      !finite(
+        s.level,
+        1,
+        Number(s.version) >= 6 ? 90 : s.version === 5 ? 30 : 15,
+      ) ||
       !Number.isInteger(s.level)
     )
       return null;
@@ -173,7 +180,13 @@ export function parseSave(raw: string | null): SaveData | null {
       occupiedSlots(s.inventory) + s.battle.gear.length > s.survival.capacity
     )
       return null;
+    if (Number(s.version) < 7) s.classes = newClass(s.level);
+    if (!validClass(s.classes, s.level)) return null;
     const stats = EquipmentSystem.stats(s.level, s.battle);
+    if (s.classes.classId) {
+      stats.hp *= 1 + (classes[s.classes.classId].stats.hp ?? 0);
+      stats.energy *= 1 + (classes[s.classes.classId].stats.energy ?? 0);
+    }
     if (Number(s.hp) > stats.hp || Number(s.energy) > stats.energy) return null;
     // A boss encounter is never resumed mid-pattern; return to the staging area.
     if (s.region === "valley" && Number(s.x) > 3990) {
@@ -198,6 +211,7 @@ export function parseSave(raw: string | null): SaveData | null {
       s.version = 6;
     }
     if (!validExtreme(s.extreme)) return null;
+    s.version = 7;
     return s as unknown as SaveData;
   } catch {
     return null;
@@ -239,7 +253,7 @@ export class SaveStore {
       if (previous) {
         try {
           if (
-            [2, 3, 4, 5].includes(JSON.parse(previous).version) &&
+            [2, 3, 4, 5, 6].includes(JSON.parse(previous).version) &&
             !this.storage.getItem(
               SAVE_KEY + ".backup.v" + JSON.parse(previous).version,
             )

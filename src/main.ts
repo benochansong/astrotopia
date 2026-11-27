@@ -1,3 +1,6 @@
+import { classAction } from "./ui/class-ui";
+import { beginTrial, finishTrial, beginRematch } from "./classes/TrainingArena";
+import type { ClassId } from "./classes/catalog";
 import { defaultBindings, bindingCodes } from "./systems/bindings";
 import { extremeAction } from "./ui/extreme-ui";
 import { spaceAction } from "./ui/space-ui";
@@ -193,6 +196,53 @@ ui.action = (action, value) => {
     ].includes(action)
   )
     return;
+  if (world && action.startsWith("cl-")) {
+    if (action === "cl-trial") {
+      const [id, tier, trialMode] = (value ?? "").split(":");
+      const next = beginTrial(
+        world,
+        id as ClassId,
+        trialMode === "challenge" ? "challenge" : "trial",
+        Number(tier),
+      );
+      if (next) {
+        world = next;
+        closeModal();
+        input.clear();
+        ui.update(world);
+      }
+      return;
+    }
+    if (action === "cl-rematch") {
+      const [id, difficulty] = (value ?? "").split(":");
+      const next = beginRematch(world, id, Number(difficulty));
+      if (next) {
+        world = next;
+        closeModal();
+        input.clear();
+        ui.update(world);
+      }
+      return;
+    }
+    if (action === "cl-finish") {
+      const next = finishTrial(world);
+      if (next) {
+        world = next;
+        openModal("skills");
+        save();
+      }
+      return;
+    }
+    if (action === "cl-ultimate") {
+      if (!ui.modal && world.classes.state.path)
+        world.classes.cast(world.classes.state.path + "_ultimate");
+      return;
+    }
+    classAction(world, action, value);
+    ui.open("skills", world, settings);
+    save();
+    return;
+  }
   if (world && extremeAction(world, action, value)) {
     ui.open("space", world, settings);
     return;
@@ -240,6 +290,11 @@ ui.action = (action, value) => {
       break;
     case "cast":
       if (world && !ui.modal && world.dead <= 0) {
+        const job = world.classes.state.slots[Number(value)];
+        if (job) {
+          world.classes.cast(job);
+          break;
+        }
         const id = world.battle.skillSlots[Number(value)];
         if (id) world.combat.skills.cast(id);
       }
@@ -323,6 +378,7 @@ ui.action = (action, value) => {
       break;
     case "skill-clear":
       if (world) {
+        world.classes.assign(Number(value), null);
         world.battle.skillSlots[Number(value)] = null;
         ui.open("skills", world, settings);
         save();
@@ -340,6 +396,7 @@ ui.action = (action, value) => {
           const previous = world.battle.skillSlots.indexOf(skill),
             old = world.battle.skillSlots[index];
           if (previous >= 0) world.battle.skillSlots[previous] = old;
+          world.classes.assign(index, null);
           world.battle.skillSlots[index] = skill;
           ui.open("skills", world, settings);
           save();

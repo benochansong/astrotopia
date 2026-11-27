@@ -1,3 +1,4 @@
+import { classArt } from "./class-art";
 import { extremePlayerEffects } from "./extreme-art";
 import { extremeBackground, extremeTerrain, extremeEnemy } from "./extreme-art";
 import { spaceBackground, spaceEnemy, spaceTerrain } from "./space-art";
@@ -1096,6 +1097,7 @@ export class Art {
       w.combat.weapons.comboStep,
     );
     extremePlayerEffects(c, w);
+    classArt(c, w);
     if (w.mining) miningTool(c, w);
     for (const p of w.particles)
       if (p.active) {

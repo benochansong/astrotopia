@@ -65,7 +65,8 @@ export interface Progress {
   checkpoint: { region: RegionId; x: number };
 }
 export interface SaveData {
-  version: 4 | 5 | 6;
+  version: 4 | 5 | 6 | 7;
+  classes?: import("../classes/types").ClassSave;
   extreme?: import("../extreme/types").ExtremeSave;
   space?: import("../space/types").SpaceSave;
   colony: import("../colony/types").ColonySave;
@@ -135,6 +136,8 @@ export interface Particle {
   size: number;
 }
 export interface Bullet {
+  classSkill?: boolean;
+  summon?: boolean;
   vy?: number;
   radius?: number;
   element?: Element;
@@ -170,6 +173,7 @@ export interface FloatingText {
   life: number;
 }
 export interface InputFrame {
+  ultimate?: boolean;
   up?: boolean;
   anchor?: boolean;
   vehicle?: boolean;

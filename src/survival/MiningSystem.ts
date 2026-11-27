@@ -6,7 +6,10 @@ import type { InputFrame } from "../core/types";
 export class MiningSystem {
   constructor(private w: World) {}
   duration(n: Resource) {
-    return ResourceSystem.seconds(n, this.w.survival.state.tool);
+    return (
+      ResourceSystem.seconds(n, this.w.survival.state.tool) *
+      this.w.classes.miningFactor
+    );
   }
   start(n: Resource) {
     const w = this.w,

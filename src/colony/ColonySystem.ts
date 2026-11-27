@@ -864,6 +864,7 @@ export class ColonySystem {
     }
     const bonus =
       1 +
+      this.w.classes.industryBonus +
       (b.level - 1) * 0.3 +
       (this.state.technologies.includes("automation") ? 0.1 : 0) +
       this.state.settlers.filter(
@@ -946,7 +947,10 @@ export class ColonySystem {
     for (const b of this.state.buildings) {
       b.age += dt;
       if (b.remaining > 0) {
-        b.remaining = Math.max(0, b.remaining - dt);
+        b.remaining = Math.max(
+          0,
+          b.remaining - dt * (1 + this.w.classes.industryBonus),
+        );
         if (b.remaining === 0) {
           b.age = 0;
           this.invalidate();
@@ -1343,7 +1347,12 @@ export class ColonySystem {
               : b.kind === "cryoTurret"
                 ? 16
                 : 28) *
-            (1 + (b.level - 1) * 0.3 + security * 0.15),
+            (1 +
+              (b.level - 1) * 0.3 +
+              security * 0.15 +
+              (this.w.classes.state.classId === "guardian"
+                ? this.w.classes.bonus
+                : 0)),
           element: b.kind === "cryoTurret" ? "cryo" : "electric",
           crit: 0,
           critDamage: 1,
@@ -1389,7 +1398,15 @@ export class ColonySystem {
             this.statuses.get(s.id)?.powered &&
             distance(s, b) <= 320,
         );
-        b.hp = Math.max(0, b.hp - dt * (shield ? 4 : 10));
+        b.hp = Math.max(
+          0,
+          b.hp -
+            dt *
+              (shield ? 4 : 10) *
+              (this.w.classes.state.classId === "guardian"
+                ? 1 - this.w.classes.bonus
+                : 1),
+        );
         if (b.hp === 0) this.invalidate();
       }
     }

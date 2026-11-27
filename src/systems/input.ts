@@ -70,6 +70,7 @@ export class Input {
   }
   frame(): InputFrame {
     return {
+      ultimate: this.pressed.has("Digit6"),
       up: this.held.has("KeyW") || this.held.has("ArrowUp"),
       anchor: this.held.has("KeyX"),
       vehicle: this.pressed.has("KeyZ"),

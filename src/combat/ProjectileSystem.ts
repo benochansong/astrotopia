@@ -23,7 +23,12 @@ export class ProjectileSystem {
         vy = speed * w.extreme.physics.aim * 0.707;
       }
       if (w.extreme.physics.swimming) {
-        const factor = a.element === "physical" ? 0.55 : 0.8;
+        const factor =
+          w.classes.state.classId === "ranger"
+            ? 0.95
+            : a.element === "physical"
+              ? 0.55
+              : 0.8;
         vx *= factor;
         vy *= factor;
         range *= 0.85;
@@ -99,6 +104,8 @@ export class ProjectileSystem {
   private payload(b: World["bullets"][number]): AttackPayload {
     return {
       damage: b.damage,
+      classSkill: b.classSkill,
+      summon: b.summon,
       element: b.element ?? "plasma",
       crit: b.crit ?? 0,
       critDamage: b.critDamage ?? 1.65,

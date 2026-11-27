@@ -25,6 +25,11 @@ export class SkillSystem {
     if (!this.shieldTime) this.shield = 0;
     if (this.w.player.grounded) this.aerialUsed = false;
     if (input.skillSlot !== undefined) {
+      const job = this.w.classes.state.slots[input.skillSlot];
+      if (job) {
+        this.w.classes.cast(job);
+        return;
+      }
       const id = this.w.battle.skillSlots[input.skillSlot];
       if (id) this.cast(id, input);
     }

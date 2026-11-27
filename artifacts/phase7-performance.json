@@ -1,0 +1,11 @@
+{
+  "elapsed": 5007.4000000003725,
+  "simulationSeconds": 5.029566666666669,
+  "gameFrames": 494,
+  "gameFPS": 98.65399209169694,
+  "rafMeanMs": 4.474444444438237,
+  "p95": 5.100000000000364,
+  "summons": 0,
+  "effects": 0,
+  "projectiles": 0
+}

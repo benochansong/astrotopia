@@ -528,7 +528,7 @@ export function explorationOverlay(
     c.arc(
       p.x + 17 - w.camera.x,
       p.y + 30 - w.camera.y,
-      ((7 - s.scanner.remaining) * 140) % 650,
+      ((((7 - s.scanner.remaining) * 140) % 650) + 650) % 650,
       0,
       Math.PI * 2,
     );

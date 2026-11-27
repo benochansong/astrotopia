@@ -13,6 +13,14 @@ import { StorageSystem } from "./StorageSystem";
 import type { ProductionJob } from "./types";
 export class ProductionQueueSystem {
   constructor(private w: World) {}
+  researchPoints(points: number) {
+    return Math.ceil(
+      points *
+        (this.w.classes.state.classId === "scientist"
+          ? 1 - this.w.classes.bonus
+          : 1),
+    );
+  }
   reason(id: string, kind: "craft" | "research", quantity = 1): string {
     const w = this.w,
       s = w.survival.state,
@@ -74,7 +82,7 @@ export class ProductionQueueSystem {
         return "심연의 파수꾼 첫 처치 설계도 필요";
       if (id === "colony" && !w.progress.counters.ancientAnalysis)
         return "생존 터미널에서 고대 기술 분석 필요";
-      if (s.researchPoints < t.points)
+      if (s.researchPoints < this.researchPoints(t.points))
         return "연구 포인트 부족 · 탐험 또는 연구 자료 변환";
     }
     const missing = w.survival.storage.missing(d.cost, quantity);
@@ -88,7 +96,8 @@ export class ProductionQueueSystem {
     }
     const s = this.w.survival.state,
       d = kind === "craft" ? recipes[id] : technologies[id],
-      points = kind === "research" ? technologies[id].points : 0;
+      points =
+        kind === "research" ? this.researchPoints(technologies[id].points) : 0;
     if (!this.w.survival.storage.spend(d.cost, quantity)) return false;
     s.researchPoints -= points;
     const cost = Object.fromEntries(

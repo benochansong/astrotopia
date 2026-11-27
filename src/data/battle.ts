@@ -1,3 +1,4 @@
+import { classGear } from "../classes/catalog";
 import { extremePlanets, type ExtremePlanet } from "../extreme/catalog";
 import { extremeRegions } from "../extreme/regions";
 import { craftedGear } from "../survival/catalog";
@@ -230,6 +231,7 @@ export interface GearTemplate {
   icon: string;
 }
 export const gearTemplates: Record<string, GearTemplate> = {
+  ...classGear,
   ...craftedGear,
   ...Object.fromEntries(
     Object.values(weapons).map((w) => [

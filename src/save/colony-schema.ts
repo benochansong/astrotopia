@@ -1,3 +1,4 @@
+import { planetIds } from "../space/catalog";
 import {
   buildings,
   colonyTech,
@@ -25,7 +26,7 @@ export const savedColonyCapacity = (s: ColonySave) =>
         .filter(
           (b) =>
             b.remaining <= 0 &&
-            ["warehouse", "largeWarehouse"].includes(b.kind),
+            ["warehouse", "largeWarehouse", "aquaLogistics"].includes(b.kind),
         )
         .reduce(
           (n, b) =>
@@ -37,7 +38,7 @@ export const savedColonyCapacity = (s: ColonySave) =>
 export function validColony(s: unknown): s is ColonySave {
   if (
     !obj(s) ||
-    !["eden-sector-01", "ares-sector-01"].includes(s.id) ||
+    !planetIds.map((id) => id + "-sector-01").includes(s.id) ||
     typeof s.name !== "string" ||
     s.name.length > 40 ||
     !int(s.serial) ||
@@ -128,6 +129,8 @@ export function validColony(s: unknown): s is ColonySave {
         "grow_resin",
         "grow_enzyme",
         "grow_medicalGel",
+        "grow_aquaFiber",
+        "grow_deepEnzyme",
       ].includes(id);
     if (b.recipe && !validRecipe(b.recipe)) return false;
     if (b.job !== null) {

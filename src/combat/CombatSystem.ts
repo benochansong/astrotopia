@@ -73,7 +73,11 @@ export class CombatSystem {
     ];
   }
   get zone() {
-    return [...subzones[this.w.region]]
+    return [
+      ...(subzones[this.w.region] ?? [
+        { id: this.w.region, start: 0, name: this.w.map.name, level: "30–90" },
+      ]),
+    ]
       .reverse()
       .find((z) => this.w.player.x >= z.start)!;
   }
@@ -134,6 +138,7 @@ export class CombatSystem {
           strong &&
           e.kind !== "sentinel" &&
           e.kind !== "conduit" &&
+          e !== this.w.extreme.combat.boss &&
           e.kind !== "colossus" &&
           e.kind !== "titan" &&
           e.kind !== "dummy" &&
@@ -154,7 +159,8 @@ export class CombatSystem {
       a,
       Math.random(),
       (e.kind === "titan" && this.boss.coreOpen) ||
-        (e.kind === "colossus" && w.space.combat.core > 0),
+        (e.kind === "colossus" && w.space.combat.core > 0) ||
+        (e === w.extreme.combat.boss && w.extreme.combat.core > 0),
     );
     let amount = result.damage;
     if (e.shield > 0) {
@@ -225,6 +231,10 @@ export class CombatSystem {
       return;
     }
     if (e.hp <= 0) {
+      if (e === w.extreme.combat.boss) {
+        e.state = "Death";
+        return;
+      }
       if (e.kind === "sentinel") {
         w.survival.sentinel.defeat();
         return;

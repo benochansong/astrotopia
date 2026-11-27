@@ -42,7 +42,7 @@ export class LootSystem {
       id: `loot-${++w.battle.serial}`,
       region: w.region,
       x,
-      y: floor.y - 15,
+      y: w.planetId === "aquaria" ? y : floor.y - 15,
       item,
       count,
       gear,

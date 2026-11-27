@@ -1,4 +1,15 @@
 import {
+  extremeItems,
+  extremeQuests,
+  type ExtremeItem,
+} from "../extreme/catalog";
+import {
+  extremeRegions,
+  extremeRegionIds,
+  extremeEnemies,
+  type ExtremeEnemy,
+} from "../extreme/regions";
+import {
   spaceItems,
   spaceQuests,
   type SpaceItem,
@@ -18,6 +29,7 @@ import type { Element, EliteAffix } from "../combat/types";
 export type RegionId =
   SpaceRegion | FrontierRegion | "crash" | "forest" | "valley";
 export type ItemId =
+  | ExtremeItem
   | SpaceItem
   | PartId
   | NewItemId
@@ -34,6 +46,7 @@ export type ItemId =
   | "ancientCrystal"
   | "titanCore";
 export type EnemyKind =
+  | ExtremeEnemy
   | SpaceEnemy
   | FrontierEnemy
   | "slime"
@@ -170,6 +183,7 @@ export const items: Record<
     icon: string;
   }
 > = {
+  ...extremeItems,
   ...spaceItems,
   ...extraItems,
   ...colonyItems,
@@ -274,6 +288,7 @@ export interface EnemyData {
   flying?: boolean;
 }
 export const enemyData: Record<EnemyKind, EnemyData> = {
+  ...extremeEnemies,
   ...spaceEnemies,
   ...frontierEnemies,
   spore: {
@@ -448,6 +463,7 @@ const node = (
   count = 1,
 ): Resource => ({ id, item, x, y, count, respawn: 35 });
 export const regions: Record<RegionId, Region> = {
+  ...extremeRegions,
   ...spaceRegions,
   ...frontierRegions,
   crash: {
@@ -625,6 +641,7 @@ export const regionOrder: RegionId[] = [
   "aresDunes",
   "aresCanyon",
   "aresFoundry",
+  ...extremeRegionIds,
 ];
 export const questData = [
   {
@@ -731,6 +748,7 @@ export const questData = [
   ...frontierQuests,
   ...colonyQuests,
   ...spaceQuests,
+  ...extremeQuests,
 ] as const;
 export const opening = [
   [

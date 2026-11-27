@@ -20,7 +20,52 @@ export class WeaponSystem {
     );
   }
   get data() {
-    return weapons[this.id];
+    const w = this.w,
+      g = w.battle.gear.find(
+        (g) =>
+          g.id ===
+          w.battle.equipment[
+            w.battle.activeSlot === 0 ? "primary" : "secondary"
+          ],
+      ),
+      base = weapons[this.id],
+      id = g?.template;
+    if (id === "hydroLance")
+      return {
+        ...base,
+        projectileSpeed: 1200,
+        pierce: true,
+        power: base.power * 1.2,
+      };
+    if (id === "sonicCannon")
+      return { ...base, range: 650, power: base.power * 1.35, cooldown: 10 };
+    if (id === "abyssBlade")
+      return {
+        ...base,
+        speed: base.speed * 0.8,
+        power: base.power * (w.extreme.physics.swimming ? 1.3 : 1),
+      };
+    if (id === "gravityLance")
+      return {
+        ...base,
+        pierce: true,
+        knockback: 400,
+        power: base.power * 1.25,
+      };
+    if (id === "quantumBlaster")
+      return {
+        ...base,
+        projectileSpeed: 1100,
+        range: 1100,
+        power: base.power * 1.4,
+      };
+    if (id === "orbitalBlade")
+      return {
+        ...base,
+        speed: base.speed * 0.85,
+        power: base.power * (!w.player.grounded ? 1.5 : 1.1),
+      };
+    return base;
   }
   switch(slot: 0 | 1) {
     const w = this.w;
@@ -68,6 +113,10 @@ export class WeaponSystem {
     if (!this.comboWindow) this.comboStep = 0;
     if (input.weaponSlot !== undefined) this.switch(input.weaponSlot);
     if (this.switchTime > 0) return;
+    if (this.slam && w.extreme.physics.swimming) {
+      this.slam = false;
+      this.area(180, 2.2, true);
+    }
     if (this.slam) {
       p.vy = Math.max(p.vy, 600);
       if (p.grounded) {

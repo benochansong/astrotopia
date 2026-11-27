@@ -1,4 +1,9 @@
 import {
+  extremeGear,
+  installExtremeRecipes,
+  extremeTech,
+} from "../extreme/catalog";
+import {
   desertGear,
   installSpaceRecipes,
   spaceTechRows,
@@ -131,6 +136,7 @@ export const toolsData = [
 ] as const;
 export const environmentGear = {
   ...desertGear,
+  ...extremeGear,
   mask: {
     name: "정화 마스크",
     slot: "mask",
@@ -368,7 +374,7 @@ for (const [id, tech, cost] of [
     5,
   );
 const envCosts: Record<
-  Exclude<EnvGearId, keyof typeof desertGear>,
+  Exclude<EnvGearId, keyof typeof desertGear | keyof typeof extremeGear>,
   [string, Cost]
 > = {
   mask: ["filter", { wovenFiber: 3, copperBar: 2, polymer: 1 }],
@@ -415,10 +421,10 @@ const weaponNames: Record<WeaponId, string> = {
 };
 export const craftedGear: Record<string, GearTemplate> = {};
 for (const [id, name] of Object.entries(weaponNames))
-  for (let mk = 1; mk <= 3; mk++) {
+  for (let mk = 1; mk <= 5; mk++) {
     const key = id + "_mk" + mk;
     craftedGear[key] = {
-      name: name + " MK-" + ["I", "II", "III"][mk - 1],
+      name: name + " MK-" + ["I", "II", "III", "IV", "V"][mk - 1],
       slot: "primary",
       weapon: id as WeaponId,
       icon: id === "blade" ? "╱" : id === "hammer" ? "⊤" : "⌁",
@@ -436,15 +442,95 @@ for (const [id, name] of Object.entries(weaponNames))
         ? { ironBar: 2, copperBar: 1 }
         : mk === 2
           ? { titaniumBar: 2, refinedCell: 2 }
-          : { alloy: 2, denseCell: 2, circuit: 1 },
+          : mk === 3
+            ? { alloy: 2, denseCell: 2, circuit: 1 }
+            : mk === 4
+              ? { ultraAlloy: 3, superCircuit: 2, plasmaCell: 2 }
+              : { spaceShield: 3, quantumCell: 2, gravityCircuit: 2 },
       { kind: "gear", id: key },
       "equipment",
-      mk === 1 ? "weapons" : mk === 2 ? "power" : "advancedWeapons",
+      mk === 1
+        ? "weapons"
+        : mk === 2
+          ? "power"
+          : mk === 3
+            ? "advancedWeapons"
+            : mk === 4
+              ? "geothermalEngineering"
+              : "quantumEngineering",
       mk * 3,
       1,
       "원형 무기의 조작과 특수 공격을 유지하며 출력·치명타 또는 에너지 용량을 강화합니다.",
     );
   }
+
+for (const [id, name, weapon, tech, cost] of [
+  [
+    "hydroLance",
+    "HYDRO LANCE",
+    "rifle",
+    "pressureEngineering",
+    { pressureAlloy: 3, hydroModule: 2 },
+  ],
+  [
+    "sonicCannon",
+    "SONIC CANNON",
+    "cannon",
+    "pressureEngineering",
+    { marineCell: 3, pressureUnit: 2 },
+  ],
+  [
+    "abyssBlade",
+    "ABYSS BLADE",
+    "blade",
+    "pressureEngineering",
+    { marineAlloy: 3, alienPearl: 2 },
+  ],
+  [
+    "gravityLance",
+    "GRAVITY LANCE",
+    "rifle",
+    "quantumEngineering",
+    { gravityCircuit: 3, lightAlloy: 2 },
+  ],
+  [
+    "quantumBlaster",
+    "QUANTUM BLASTER",
+    "pulse",
+    "quantumEngineering",
+    { quantumCell: 3, navCrystal: 2 },
+  ],
+  [
+    "orbitalBlade",
+    "ORBITAL BLADE",
+    "blade",
+    "quantumEngineering",
+    { spaceShield: 3, advancedDrive: 2 },
+  ],
+] as const) {
+  craftedGear[id] = {
+    name,
+    slot: "primary",
+    weapon,
+    icon: "◇",
+    stats: {
+      attack: tech === "quantumEngineering" ? 28 : 22,
+      energy: 10,
+      crit: 0.04,
+    },
+  };
+  recipe(
+    id,
+    name,
+    cost,
+    { kind: "gear", id },
+    "equipment",
+    tech,
+    15,
+    1,
+    "기존 무기 조작을 유지하며 관통·광역·공중 공격 특성을 강화합니다.",
+  );
+}
 export interface Technology {
   id: string;
   name: string;
@@ -608,6 +694,12 @@ export function regionEnvironment(
   x: number,
   y: number,
 ): EnvironmentKind {
+  if (id.startsWith("inferno"))
+    return id.endsWith("Landing") && x < 650 ? "safe" : "toxic";
+  if (
+    ["frostia", "inferno", "aquaria", "lunaris"].some((p) => id.startsWith(p))
+  )
+    return id.endsWith("Landing") && x < 650 ? "safe" : "hypoxia";
   if (id.startsWith("ares"))
     return id === "aresLanding" && x < 650 ? "safe" : "hypoxia";
   if (x < 500) return "safe";
@@ -658,3 +750,6 @@ for (const row of spaceTechRows)
     cost: { ...row.cost },
     seconds: 12,
   };
+
+installExtremeRecipes(recipes);
+for (const t of extremeTech) technologies[t.id] = t;

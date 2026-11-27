@@ -1,3 +1,4 @@
+import { extremeGear } from "../extreme/catalog";
 import type { World } from "../core/world";
 import type { ItemId, Landmark } from "../data/content";
 import { EnvironmentSystem, OxygenSystem } from "./EnvironmentSystem";
@@ -81,6 +82,12 @@ export class SurvivalSystem {
         "efficiency",
       ] as const)
         r[key] += g[key];
+      const extreme = extremeGear[id as keyof typeof extremeGear];
+      if (extreme) {
+        r.cold += extreme.cold;
+        r.heat += extreme.heat;
+        r.pressure += extreme.pressure;
+      }
       if (id === "advanced") {
         r.cold += 25;
         r.heat += 25;

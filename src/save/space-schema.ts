@@ -1,5 +1,10 @@
 import { items } from "../data/content";
-import { shipSystems, upgrades, planetForRegion } from "../space/catalog";
+import {
+  planetIds,
+  shipSystems,
+  upgrades,
+  planetForRegion,
+} from "../space/catalog";
 import type { SpaceSave } from "../space/types";
 import { occupiedSlots } from "../systems/inventory";
 import { validColony, savedColonyCapacity } from "./colony-schema";
@@ -17,10 +22,11 @@ export function validSpace(
   s: any,
   global: SurvivalSave,
   region: string,
+  horizon = false,
 ): s is SpaceSave {
   if (
     !obj(s) ||
-    !["eden", "ares"].includes(s.location) ||
+    !planetIds.includes(s.location) ||
     (region !== "ship" && planetForRegion(region) !== s.location) ||
     !list(s.repaired, shipSystems) ||
     !list(s.upgrades, upgrades) ||
@@ -40,14 +46,15 @@ export function validSpace(
     !obj(s.cargo) ||
     Object.entries(s.cargo).some(
       ([id, n]) =>
-        !Object.hasOwn(items, id) || !num(n, 15840) || !Number.isInteger(n),
+        !Object.hasOwn(items, id) || !num(n, 31680) || !Number.isInteger(n),
     ) ||
-    occupiedSlots(s.cargo) > (s.upgrades.includes("cargo") ? 160 : 80)
+    occupiedSlots(s.cargo) >
+      (horizon ? 320 : s.upgrades.includes("cargo") ? 160 : 80)
   )
     return false;
   if (
     !obj(s.planets) ||
-    Object.keys(s.planets).some((id) => !["eden", "ares"].includes(id))
+    Object.keys(s.planets).some((id) => !planetIds.includes(id as never))
   )
     return false;
   for (const [id, p] of Object.entries(s.planets) as [string, any][]) {
@@ -67,14 +74,16 @@ export function validSpace(
       !obj(t) ||
       region !== "ship" ||
       !["ascent", "voyage"].includes(t.kind) ||
-      !["eden", "ares"].includes(t.from) ||
-      !["eden", "ares"].includes(t.to) ||
+      !planetIds.includes(t.from) ||
+      !planetIds.includes(t.to) ||
       t.from !== s.location ||
       !Number.isInteger(t.id) ||
       t.id < 1 ||
       t.id > s.serial ||
       !num(t.remaining, t.kind === "ascent" ? 20 : 8) ||
-      ![5, 12, 15].includes(t.cost) ||
+      !num(t.cost, 50) ||
+      !Number.isInteger(t.cost) ||
+      t.cost < 1 ||
       s.repaired.length !== 7
     )
       return false;

@@ -7,6 +7,7 @@ export class TechnologyTreeSystem {
     "생존",
     "무기",
     "개척",
+    "극한 환경",
     "우주",
     "탐사",
     "물류",

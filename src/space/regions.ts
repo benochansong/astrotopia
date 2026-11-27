@@ -1,3 +1,4 @@
+import type { ExtremeRegion } from "../extreme/catalog";
 import type { Region, EnemyData, ItemId } from "../data/content";
 import type { SpaceRegion } from "./catalog";
 export type SpaceEnemy =
@@ -52,7 +53,7 @@ export const spaceEnemies: Record<SpaceEnemy, EnemyData> = {
     defense: 16,
   },
 };
-const ids: SpaceRegion[] = [
+const ids: Exclude<SpaceRegion, ExtremeRegion>[] = [
   "aresLanding",
   "aresDunes",
   "aresCanyon",
@@ -71,7 +72,10 @@ const drops: ItemId[][] = [
   ["pureTitanium", "heatOre", "industrialAlloy"],
   ["powerCircuit", "heatOre", "thermalCrystal"],
 ];
-export const spaceRegions = {} as Record<SpaceRegion, Region>;
+export const spaceRegions = {} as Record<
+  Exclude<SpaceRegion, ExtremeRegion>,
+  Region
+>;
 for (let i = 0; i < 4; i++) {
   const id = ids[i],
     width = i === 0 ? 10000 : i === 3 ? 4800 : 3800;

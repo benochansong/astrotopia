@@ -12,7 +12,15 @@ export function movePlayer(
   dt: number,
   platforms: Platform[],
   gravity: number,
-  tuning = { speed: 250, energy: 100, regen: 12 },
+  tuning: {
+    speed: number;
+    energy: number;
+    regen: number;
+    friction?: number;
+    jumpSpeed?: number;
+    swimming?: boolean;
+    airControl?: number;
+  } = { speed: 250, energy: 100, regen: 12 },
 ): boolean {
   const landedBefore = p.grounded;
   p.coyote = p.grounded ? 0.12 : Math.max(0, p.coyote - dt);
@@ -47,7 +55,7 @@ export function movePlayer(
     p.energy -= 18;
   }
   if (p.jumpBuffer > 0 && p.coyote > 0 && !p.drop) {
-    p.vy = -520;
+    p.vy = -(tuning.jumpSpeed ?? 520);
     p.grounded = false;
     p.coyote = 0;
     p.jumpBuffer = 0;
@@ -59,9 +67,11 @@ export function movePlayer(
       : approach(
           p.vx,
           direction * tuning.speed,
-          (p.grounded ? 1800 : 1100) * dt,
+          (p.grounded
+            ? 1800 * (tuning.friction ?? 1)
+            : (tuning.airControl ?? 1100)) * dt,
         );
-  if (p.dash > 0) p.vy = 0;
+  if (p.dash > 0 && !tuning.swimming) p.vy = 0;
   else p.vy = Math.min(p.vy + 1100 * gravity * dt, 800);
   const oldX = p.x;
   p.x += p.vx * dt;

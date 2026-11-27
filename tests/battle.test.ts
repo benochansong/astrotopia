@@ -26,7 +26,7 @@ describe("Battle evolution", () => {
     s.settings = { music: 0.2, sfx: 0.4, effects: "low" };
     const raw = JSON.stringify(s),
       m = parseSave(raw)!;
-    expect(m.version).toBe(5);
+    expect(m.version).toBe(6);
     expect(m.inventory.iron).toBe(12);
     expect(m.battle.ownedWeapons.length).toBeGreaterThan(2);
     const mem = new Map([[SAVE_KEY, raw]]);

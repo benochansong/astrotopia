@@ -16,8 +16,11 @@ export class EquipmentUpgradeSystem {
     return {
       level,
       before: gearStats(g),
-      after: gearStats({ ...g, upgrade: Math.min(5, level + 1) }),
-      cost: { ironBar: level + 1, refinedCell: Math.ceil((level + 1) / 2) },
+      after: gearStats({ ...g, upgrade: Math.min(10, level + 1) }),
+      cost:
+        level < 5
+          ? { ironBar: level + 1, refinedCell: Math.ceil((level + 1) / 2) }
+          : { quantumCell: level - 3, ultraAlloy: level - 2 },
       credits: 50 * (level + 1),
     };
   }
@@ -28,7 +31,9 @@ export class EquipmentUpgradeSystem {
     if (
       !g ||
       !p ||
-      p.level >= 5 ||
+      p.level >= 10 ||
+      (p.level >= 5 &&
+        !w.survival.state.technologies.includes("quantumEngineering")) ||
       !w.survival.inBase ||
       !w.survival.state.facilities.includes("equipment") ||
       !w.survival.state.technologies.includes("upgrade")

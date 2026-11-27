@@ -13,7 +13,13 @@ export class EnvironmentSystem {
     return regionEnvironment(this.w.region, this.w.player.x, this.w.player.y);
   }
   get data() {
-    return environments[this.kind];
+    return this.w.planetId === "inferno" && this.kind === "toxic"
+      ? {
+          ...environments.toxic,
+          name: "유독 화산 대기",
+          hint: "화산재 필터 · 내열 차폐복",
+        }
+      : environments[this.kind];
   }
   get deficit() {
     const r = this.w.survival.resistance;
@@ -98,7 +104,10 @@ export class OxygenSystem {
   }
   update(dt: number) {
     const s = this.w.survival.state,
-      k = this.w.survival.environment.kind;
+      k =
+        this.w.extreme.active && !this.w.extreme.environment.sheltered
+          ? "hypoxia"
+          : this.w.survival.environment.kind;
     this.warn = Math.max(0, this.warn - dt);
     const rate =
       k === "hypoxia"
@@ -107,7 +116,20 @@ export class OxygenSystem {
           ? -0.45
           : 8;
     if (rate < 0 && this.w.survival.environment.grace > 0) return;
-    s.oxygen = Math.max(0, Math.min(this.maximum, s.oxygen + rate * dt));
+    s.oxygen = Math.max(
+      0,
+      Math.min(
+        this.maximum,
+        s.oxygen +
+          rate *
+            dt *
+            (rate < 0 &&
+            this.w.extreme.state.vehicle?.mounted &&
+            this.w.extreme.state.vehicle.kind === "pod"
+              ? 0.5
+              : 1),
+      ),
+    );
     if (s.oxygen / this.maximum <= 0.2 && this.warn === 0) {
       this.warn = 15;
       this.w.toast("O₂ 산소 20% 이하 · 산소통 사용 또는 안전 지대로 귀환");

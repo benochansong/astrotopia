@@ -51,7 +51,7 @@ test("production bundle restores a v4 colony and supports real construction with
   const saved = await page.evaluate(() =>
     JSON.parse(localStorage.getItem("astrotopia.save.v1")!),
   );
-  expect(saved.version).toBe(5);
+  expect(saved.version).toBe(6);
   expect(
     saved.colony.buildings.filter((b: any) => b.kind === "habitat"),
   ).toHaveLength(1);

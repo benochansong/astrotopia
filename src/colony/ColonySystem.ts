@@ -89,7 +89,7 @@ export class ColonySystem {
           .filter(
             (b) =>
               b.remaining <= 0 &&
-              ["warehouse", "largeWarehouse"].includes(b.kind),
+              ["warehouse", "largeWarehouse", "aquaLogistics"].includes(b.kind),
           )
           .reduce(
             (n, b) =>
@@ -301,6 +301,18 @@ export class ColonySystem {
       )
     )
       return "지원하는 광물 매장지 위에 배치하세요.";
+    if (d.science && !this.w.survival.state.technologies.includes(d.science))
+      return "필요 연구: " + d.science;
+    if (
+      kind === "geothermalGen" &&
+      (this.w.planetId !== "inferno" ||
+        !this.w.deposits.some(
+          (p) =>
+            p.item === "geothermalCrystal" &&
+            Math.abs(p.x - (x + d.w / 2)) < 240,
+        ))
+    )
+      return "지열 매장지 반경 240에 배치하세요.";
     const missing = this.w.survival.storage.missing(d.cost);
     if (missing.length) return "재료 부족 · " + missing.join(" / ");
     return "";
@@ -361,7 +373,8 @@ export class ColonySystem {
       refund[k as ItemId] = (refund[k as ItemId] ?? 0) + n!;
     const cap =
       this.capacity -
-      (["warehouse", "largeWarehouse"].includes(b.kind) && b.remaining <= 0
+      (["warehouse", "largeWarehouse", "aquaLogistics"].includes(b.kind) &&
+      b.remaining <= 0
         ? (definition(b.kind).capacity ?? 0) * (b.level - (b.legacy ? 1 : 0))
         : 0);
     if (
@@ -429,12 +442,14 @@ export class ColonySystem {
     }
   }
   facilityPowered(f: Facility) {
-    if(this.w.region==='ship' && f==='workbench')return true;
+    if (this.w.region === "ship" && f === "workbench") return true;
     if (!this.state.enabled || f === "terminal" || f === "warehouse")
       return true;
     const kind = f === "research" ? "lab" : f;
     return this.state.buildings.some(
-      (b) => b.kind === kind && this.statuses.get(b.id)?.powered,
+      (b) =>
+        (b.kind === kind || (kind === "lab" && b.kind === "quantumLab")) &&
+        this.statuses.get(b.id)?.powered,
     );
   }
   facilitySpeed(f: Facility) {
@@ -443,8 +458,12 @@ export class ColonySystem {
     return Math.max(
       1,
       ...this.state.buildings
-        .filter((b) => b.kind === kind && this.statuses.get(b.id)?.powered)
-        .map((b) => 1 + (b.level - 1) * 0.3),
+        .filter(
+          (b) =>
+            (b.kind === kind || (kind === "lab" && b.kind === "quantumLab")) &&
+            this.statuses.get(b.id)?.powered,
+        )
+        .map((b) => (b.kind === "quantumLab" ? 1.5 : 1) + (b.level - 1) * 0.3),
     );
   }
   projectedFlows() {
@@ -543,6 +562,12 @@ export class ColonySystem {
   private power(dt: number, offline: boolean) {
     this.rebuild();
     this.networks = [];
+    const ashProtected = this.state.buildings.some(
+      (b) =>
+        b.kind === "ashProtection" &&
+        alive(b) &&
+        this.statuses.get(b.id)?.powered,
+    );
     this.statuses.clear();
     const all = this.state.buildings;
     for (const b of all)
@@ -568,9 +593,27 @@ export class ColonySystem {
         const d = definition(b.kind);
         if (!d.generation) continue;
         let output = d.generation * (1 + (b.level - 1) * 0.35);
-        if (["solar", "highSolar"].includes(b.kind))
+        if (b.kind === "tidalGenerator" || b.kind === "cosmicSolar") {
+          output *=
+            this.w.planetId ===
+            (b.kind === "tidalGenerator" ? "aquaria" : "lunaris")
+              ? 1
+              : 0;
+        } else if (b.kind === "geothermalGen") {
+          output *=
+            this.w.planetId === "inferno" &&
+            this.w.deposits.some(
+              (p) =>
+                p.item === "geothermalCrystal" &&
+                Math.abs(p.x - center(b)) < 240,
+            )
+              ? 1
+              : 0;
+        } else if (["solar", "highSolar"].includes(b.kind)) {
           output *= offline ? 0.6 : this.night ? 0 : 1;
-        else {
+          if (this.w.extreme.environment.weather.active && !ashProtected)
+            output *= 0.6;
+        } else {
           if (b.fuel <= 0 && dt > 0) {
             const item = b.kind === "crystalGen" ? "crystal" : "denseCell";
             if (this.takeWarehouse({ [item]: 1 }))
@@ -613,7 +656,13 @@ export class ColonySystem {
         });
         if (
           d.generation &&
-          !["solar", "highSolar"].includes(b.kind) &&
+          ![
+            "solar",
+            "highSolar",
+            "geothermalGen",
+            "tidalGenerator",
+            "cosmicSolar",
+          ].includes(b.kind) &&
           b.fuel <= 0
         )
           this.statuses.get(b.id)!.reason = "발전 연료 부족";
@@ -647,7 +696,9 @@ export class ColonySystem {
       });
     }
     const warehouses = all.filter(
-        (b) => alive(b) && ["warehouse", "largeWarehouse"].includes(b.kind),
+        (b) =>
+          alive(b) &&
+          ["warehouse", "largeWarehouse", "aquaLogistics"].includes(b.kind),
       ),
       global = all.some(
         (b) => b.kind === "logistics" && this.statuses.get(b.id)?.powered,
@@ -696,6 +747,15 @@ export class ColonySystem {
         item: id as PartId,
         count: 1,
       }));
+    if (b.kind === "bioFarm")
+      return (["aquaFiber", "deepEnzyme"] as ItemId[]).map((id) => ({
+        id: "grow_" + id,
+        name: items[id].name,
+        cost: { biomass: 1 },
+        seconds: 30,
+        item: id,
+        count: 3,
+      }));
     if (b.kind === "greenhouse")
       return (
         ["fiber", "strongFiber", "resin", "enzyme", "medicalGel"] as ItemId[]
@@ -711,7 +771,7 @@ export class ColonySystem {
       .filter(
         ([, r]) =>
           r.result.kind === "item" &&
-          (b.kind === "refinery"
+          (["refinery", "magmaCooling", "alloyFactory"].includes(b.kind)
             ? r.facility === "refinery"
             : b.kind === "factory"
               ? ["electronics", "refine_alloy", "refine_denseCell"].includes(
@@ -993,11 +1053,11 @@ export class ColonySystem {
       s = this.statuses.get(id);
     return (
       !!b &&
-      b.kind === "habitat" &&
+      ["habitat", "sealedHabitat", "vacuumHabitat"].includes(b.kind) &&
       !!s?.powered &&
       this.state.buildings.some(
         (o) =>
-          o.kind === "oxygen" &&
+          ["oxygen", "oxygen2"].includes(o.kind) &&
           this.statuses.get(o.id)?.powered &&
           this.statuses.get(o.id)?.network === s.network,
       )
@@ -1155,7 +1215,8 @@ export class ColonySystem {
     for (const b of this.state.buildings) {
       if (
         !this.statuses.get(b.id)?.powered ||
-        Math.abs(center(b) - this.w.player.x) > 180
+        Math.abs(center(b) - this.w.player.x) > 180 ||
+        Math.abs(b.y - this.w.player.y) > 240
       )
         continue;
       if (b.kind === "medical")
@@ -1172,7 +1233,7 @@ export class ColonySystem {
                 ).length *
                   2),
         );
-      if (b.kind === "oxygen")
+      if (["oxygen", "oxygen2"].includes(b.kind))
         this.w.survival.state.oxygen = Math.min(
           this.w.survival.oxygen.maximum,
           this.w.survival.state.oxygen + dt * 15,

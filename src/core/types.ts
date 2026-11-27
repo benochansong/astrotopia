@@ -7,6 +7,7 @@ import type {
   StatusId,
 } from "../combat/types";
 export type Animation =
+  | "Swim"
   | "Idle"
   | "Walk"
   | "Run"
@@ -42,6 +43,13 @@ export interface Player {
   animationTime: number;
 }
 export interface Settings {
+  fog?: number;
+  glow?: boolean;
+  waterMotion?: boolean;
+  cameraSpeed?: number;
+  jetAssist?: boolean;
+  iceAssist?: boolean;
+  bindings?: Record<string, string>;
   music: number;
   sfx: number;
   effects: "high" | "low";
@@ -57,7 +65,8 @@ export interface Progress {
   checkpoint: { region: RegionId; x: number };
 }
 export interface SaveData {
-  version: 4 | 5;
+  version: 4 | 5 | 6;
+  extreme?: import("../extreme/types").ExtremeSave;
   space?: import("../space/types").SpaceSave;
   colony: import("../colony/types").ColonySave;
   survival: import("../survival/types").SurvivalSave;
@@ -161,6 +170,9 @@ export interface FloatingText {
   life: number;
 }
 export interface InputFrame {
+  up?: boolean;
+  anchor?: boolean;
+  vehicle?: boolean;
   scan?: boolean;
   quick?: number;
   special?: boolean;

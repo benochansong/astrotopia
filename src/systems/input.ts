@@ -1,13 +1,17 @@
+import { defaultBindings } from "./bindings";
 import type { InputFrame } from "../core/types";
 export class Input {
   held = new Set<string>();
   pressed = new Set<string>();
   onMenu: (key: string) => void = () => {};
   private controller = new AbortController();
-  constructor() {
+  constructor(
+    private bindings: () => Record<string, string> = () => defaultBindings,
+  ) {
     window.addEventListener(
       "keydown",
       (e) => {
+        const code = this.code(e.code);
         if (
           (e.target as HTMLElement)?.matches("input,select,textarea") &&
           e.code !== "Escape"
@@ -25,7 +29,7 @@ export class Input {
         )
           e.preventDefault();
         if (!e.repeat) {
-          this.pressed.add(e.code);
+          this.pressed.add(code);
           if (
             [
               "Escape",
@@ -42,19 +46,33 @@ export class Input {
           )
             this.onMenu(e.code);
         }
-        this.held.add(e.code);
+        this.held.add(code);
       },
       { signal: this.controller.signal },
     );
-    window.addEventListener("keyup", (e) => this.held.delete(e.code), {
-      signal: this.controller.signal,
-    });
+    window.addEventListener(
+      "keyup",
+      (e) => this.held.delete(this.code(e.code)),
+      {
+        signal: this.controller.signal,
+      },
+    );
     window.addEventListener("blur", () => this.clear(), {
       signal: this.controller.signal,
     });
   }
+  private code(physical: string) {
+    const map = this.bindings();
+    return (
+      Object.entries(map).find(([, v]) => v === physical)?.[0] ??
+      (Object.hasOwn(defaultBindings, physical) ? "" : physical)
+    );
+  }
   frame(): InputFrame {
     return {
+      up: this.held.has("KeyW") || this.held.has("ArrowUp"),
+      anchor: this.held.has("KeyX"),
+      vehicle: this.pressed.has("KeyZ"),
       scan: this.pressed.has("KeyG"),
       quick: this.pressed.has("Digit3")
         ? 0

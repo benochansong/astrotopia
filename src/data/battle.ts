@@ -1,3 +1,5 @@
+import { extremePlanets, type ExtremePlanet } from "../extreme/catalog";
+import { extremeRegions } from "../extreme/regions";
 import { craftedGear } from "../survival/catalog";
 import type {
   BattleSave,
@@ -328,6 +330,27 @@ export function newBattle(level = 1): BattleSave {
   };
 }
 export const subzones = {
+  ...Object.fromEntries(
+    Object.values(extremeRegions).map((r) => [
+      r.id,
+      [
+        {
+          id: r.id,
+          start: 0,
+          name: r.name,
+          level:
+            extremePlanets[
+              r.id.replace(/Landing|Wilds|Depths|Ruins/, "") as ExtremePlanet
+            ].level -
+            15 +
+            "–" +
+            extremePlanets[
+              r.id.replace(/Landing|Wilds|Depths|Ruins/, "") as ExtremePlanet
+            ].level,
+        },
+      ],
+    ]),
+  ),
   ...(Object.fromEntries(
     ["ship", "aresLanding", "aresDunes", "aresCanyon", "aresFoundry"].map(
       (id) => [

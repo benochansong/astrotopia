@@ -1,3 +1,10 @@
+import { ExtremeSystem } from "../extreme/ExtremeSystem";
+import { extremeDeposits } from "../extreme/regions";
+import {
+  extremeIds,
+  extremePlanets,
+  type ExtremePlanet,
+} from "../extreme/catalog";
 import { SpaceSystem } from "../space/SpaceSystem";
 import { baseForPlanet, aresDeposits } from "../space/catalog";
 import { deposits } from "../colony/catalog";
@@ -78,6 +85,7 @@ export class World {
   survival = new SurvivalSystem(this);
   colony = new ColonySystem(this);
   space = new SpaceSystem(this);
+  extreme = new ExtremeSystem(this);
   get planetId() {
     return this.space.planet;
   }
@@ -88,10 +96,19 @@ export class World {
     return this.region === this.baseRegion;
   }
   get deposits() {
-    return this.planetId === "ares" ? aresDeposits : deposits;
+    return extremeIds.includes(this.planetId as ExtremePlanet)
+      ? extremeDeposits(this.planetId)
+      : this.planetId === "ares"
+        ? aresDeposits
+        : deposits;
   }
   get levelCap() {
-    return this.space.state.launched ? 30 : 15;
+    return Math.max(
+      this.space.state.launched ? 30 : 15,
+      ...extremeIds
+        .filter((id) => this.space.state.planets[id])
+        .map((id) => extremePlanets[id].level),
+    );
   }
   get stats() {
     const stats = EquipmentSystem.stats(this.player.level, this.battle);
@@ -152,6 +169,8 @@ export class World {
   private moved = false;
   constructor(save?: SaveData) {
     if (save) {
+      if (save.space) this.space.state = structuredClone(save.space);
+      this.extreme.initialize(save.extreme);
       this.colony.state = structuredClone(save.colony);
       this.battle = structuredClone(save.battle);
       this.survival.state = structuredClone(save.survival);
@@ -183,24 +202,34 @@ export class World {
     this.colony.initialize();
     this.colony.offline();
     this.space.initialize(save?.space);
+
     if (!this.colony.state.enabled) this.survival.production.offline();
     if (!["crash", "forest", "valley"].includes(this.region)) {
       this.player.x = this.map.spawn;
       this.player.y = 716;
       this.survival.environment.grace = 12;
+      this.survival.state.oxygen = this.survival.oxygen.maximum;
       this.safe = { x: this.player.x, y: this.player.y };
     }
     this.camera.x = Math.max(0, this.player.x - 500);
   }
   get map() {
-    const map = regions[this.region];
+    const source = regions[this.region];
+    const map = {
+      ...source,
+      platforms: [
+        ...source.platforms,
+        ...this.extreme.combat.platforms,
+        ...this.extreme.physics.extraPlatforms,
+      ],
+    };
     if (this.isColonyRegion && this.colony.unlocked)
       return {
         ...map,
         width: BASE_END + 240,
         platforms: [...map.platforms, ...this.colony.platforms],
         landmarks:
-          this.planetId === "ares"
+          this.planetId !== "eden"
             ? map.landmarks
             : [
                 ...map.landmarks,
@@ -323,6 +352,7 @@ export class World {
     }
   }
   damage(amount: number, fromX: number, element: Element = "physical") {
+    if (this.player.invulnerable <= 0) this.extreme.vehicles.damage(amount);
     const p = this.player;
     if (p.invulnerable > 0 || this.dead > 0 || this.combat.training) return;
     const actual = this.combat.receive(amount, element);
@@ -364,9 +394,11 @@ export class World {
     this.emit("save", "respawn");
   }
   enterRegion(id: RegionId, x?: number) {
+    if (this.extreme.state.vehicle) this.extreme.state.vehicle.mounted = false;
     this.combat.reset();
     this.survival.sentinel.abort();
     this.space.combat.abort();
+    this.extreme.combat.abort();
     this.survival.environment.grace = 8;
     this.region = id;
     const p = this.player;
@@ -472,6 +504,7 @@ export class World {
       return;
     }
     const l = target.landmark;
+    if (this.extreme.interact(l)) return;
     if (this.space.interact(l)) return;
     if (this.survival.interact(l)) return;
     if (l.kind === "training") {
@@ -609,6 +642,7 @@ export class World {
     input = { ...input, ...this.buffered };
     this.buffered = {};
     this.survival.update(dt, input);
+    this.extreme.update(dt, input);
     if (this.dead > 0) return;
     this.combat.beforeMovement(dt, input);
     const p = this.player;
@@ -621,23 +655,36 @@ export class World {
       first = true;
     while (remaining > 0) {
       const step = Math.min(remaining, MAX_STEP);
+      this.extreme.physics.beforeStep(step, input);
       const landed = movePlayer(
         p,
         {
           ...input,
-          jump: first && input.jump,
-          jumpHeld: input.jumpHeld || this.combat.skills.liftTime > 0,
+          jump: first && input.jump && !this.extreme.physics.swimming,
+          down: this.extreme.physics.swimming ? false : input.down,
+          jumpHeld:
+            this.extreme.physics.swimming ||
+            input.jumpHeld ||
+            this.combat.skills.liftTime > 0,
           dash: first && input.dash,
         },
         step,
         this.map.platforms,
-        this.space.gravity,
+        this.extreme.physics.swimming ? 0 : this.space.gravity,
         {
-          speed: this.stats.moveSpeed * this.combat.weapons.movement(input),
+          speed:
+            this.stats.moveSpeed *
+            this.combat.weapons.movement(input) *
+            this.extreme.physics.speedFactor,
+          swimming: this.extreme.physics.swimming,
+          airControl: this.extreme.physics.airControl,
           energy: this.stats.energy,
           regen: this.stats.regen,
+          friction: this.extreme.friction,
+          jumpSpeed: this.extreme.physics.jumpSpeed,
         },
       );
+      this.extreme.physics.afterStep();
       if (landed) {
         p.animation = "Land";
         p.animationTime = 0.13;
@@ -650,14 +697,15 @@ export class World {
     }
     p.x = Math.max(0, Math.min(this.map.width - p.w, p.x));
     if (p.grounded) this.safe = { x: p.x, y: p.y };
-    if (p.y > 1100) {
+    if (p.y > (this.planetId === "aquaria" ? 2900 : 1100)) {
       p.invulnerable = 0;
       this.damage(1000, p.x);
     }
     p.animationTime = Math.max(0, p.animationTime - dt);
     if (p.animationTime <= 0)
-      p.animation =
-        p.dash > 0
+      p.animation = this.extreme.physics.swimming
+        ? "Swim"
+        : p.dash > 0
           ? "Dash"
           : !p.grounded
             ? p.vy < 0
@@ -677,15 +725,19 @@ export class World {
       this.cooldowns[id] = Math.max(0, this.cooldowns[id] - dt);
     this.combat.update(dt, input);
     this.effects(dt);
-    const targetX =
-      this.combat.boss.active || this.survival.sentinel.active
+    const targetX = this.extreme.combat.boss
+      ? Math.max(0, this.map.width - 1500)
+      : this.combat.boss.active || this.survival.sentinel.active
         ? this.map.width - 1280
         : Math.max(
             0,
             Math.min(this.map.width - 1280, p.x - 600 + p.facing * 100),
           );
-    const targetY = Math.max(0, Math.min(350, p.y - 490));
-    const ease = 1 - Math.exp(-dt * 5);
+    const targetY = Math.max(
+      0,
+      Math.min(this.planetId === "aquaria" ? 2200 : 350, p.y - 490),
+    );
+    const ease = 1 - Math.exp(-dt * 5 * (this.settings.cameraSpeed ?? 1));
     this.camera.x += (targetX - this.camera.x) * ease;
     this.camera.y += (targetY - this.camera.y) * ease;
     const index = regionOrder.indexOf(this.region);
@@ -726,7 +778,8 @@ export class World {
   }
   snapshot(settings: Settings): SaveData {
     return {
-      version: 5,
+      version: 6,
+      extreme: structuredClone(this.extreme.state),
       space: this.space.snapshot(),
       colony: structuredClone(this.colony.state),
       survival: {

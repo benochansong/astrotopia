@@ -1,3 +1,4 @@
+import { extremePlanets, type ExtremePlanet } from "../extreme/catalog";
 import type { World } from "../core/world";
 import type { InputFrame } from "../core/types";
 import { items, type ItemId, type Landmark } from "../data/content";
@@ -8,6 +9,7 @@ import { StorageSystem } from "../survival/StorageSystem";
 import { occupiedSlots } from "../systems/inventory";
 import { newSpace, type SpaceSave, type LocalSave } from "./types";
 import {
+  planetIds,
   baseForPlanet,
   planetForRegion,
   shipSystems,
@@ -40,17 +42,28 @@ export class SpaceSystem {
       : planetForRegion(this.w.region);
   }
   get gravity() {
-    return this.planet === "ares" ? 0.65 : 0.9;
+    return (
+      extremePlanets[this.planet as ExtremePlanet]?.gravity ??
+      (this.planet === "ares" ? 0.65 : 0.9)
+    );
   }
   get capacity() {
-    return this.state.upgrades.includes("cargo") ? 160 : 80;
+    return this.w.extreme.state.horizon
+      ? 320
+      : this.state.upgrades.includes("cargo")
+        ? 160
+        : 80;
   }
   protectedBy(kind: string) {
-    return this.w.colony.state.buildings.some(
-      (b) =>
-        b.kind === kind &&
-        this.w.colony.statuses.get(b.id)?.powered &&
-        Math.abs(b.x + 80 - this.w.player.x) < 260,
+    return (
+      this.w.isColonyRegion &&
+      this.w.colony.state.buildings.some(
+        (b) =>
+          b.kind === kind &&
+          this.w.colony.statuses.get(b.id)?.powered &&
+          Math.abs(b.x + 80 - this.w.player.x) < 260 &&
+          Math.abs(b.y - this.w.player.y) < 260,
+      )
     );
   }
   get storm() {
@@ -89,7 +102,7 @@ export class SpaceSystem {
   initialize(save?: SpaceSave) {
     if (save) this.state = structuredClone(save);
     this.capture();
-    for (const id of ["eden", "ares"] as PlanetId[]) {
+    for (const id of planetIds) {
       if (id === this.state.location) continue;
       const p = this.state.planets[id];
       if (p) {
@@ -201,13 +214,55 @@ export class SpaceSystem {
     this.w.emit("save", "fuel");
     return true;
   }
+  costFor(to: PlanetId) {
+    const base =
+      (to === "eden" && this.state.location === "ares") ||
+      (to === "ares" && this.state.location === "eden")
+        ? 15
+        : (to === "frostia" && this.state.location === "eden") ||
+            (to === "eden" && this.state.location === "frostia")
+          ? 35
+          : Math.max(
+              extremePlanets[to as ExtremePlanet]?.fuel ?? 15,
+              extremePlanets[this.state.location as ExtremePlanet]?.fuel ?? 15,
+            );
+    return Math.ceil(
+      base *
+        (this.state.upgrades.includes("propulsion") ? 0.8 : 1) *
+        (this.w.colony.state.buildings.some(
+          (b) =>
+            b.kind === "advancedNav" &&
+            this.w.colony.statuses.get(b.id)?.powered,
+        )
+          ? 0.8
+          : 1),
+    );
+  }
   reason(to: PlanetId, ascent = false) {
+    const p = extremePlanets[to as ExtremePlanet];
+    if (p) {
+      if (!p.available) return "후속 항해 준비 중";
+      if (to !== "frostia" && !this.w.extreme.state.horizon)
+        return "HORIZON 선체 업그레이드 필요";
+      if (!this.w.survival.state.technologies.includes(p.tech))
+        return "선행 연구: " + p.tech;
+      if (
+        !(
+          this.w.survival.state.equipped.includes(p.gear as never) ||
+          (to === "aquaria" &&
+            this.w.survival.state.equipped.includes("deepPressureSuit")) ||
+          this.w.survival.state.equipped.includes("universalSuit3")
+        ) ||
+        this.w.survival.resistance.oxygen < 100
+      )
+        return "환경 탐험복과 산소 장비를 장착하세요.";
+    }
     if (this.state.trip) return "항해 중";
     if (this.w.region !== "ship") return "우주선에 먼저 탑승하세요.";
     if (!this.ready) return "7개 시스템을 모두 복구하세요.";
     if (!ascent && !this.state.launched) return "첫 이륙을 완료하세요.";
     if (!ascent && to === this.state.location) return "현재 정박 행성";
-    if (this.state.fuel < (ascent ? 5 : this.fuelCost)) return "연료 부족";
+    if (this.state.fuel < (ascent ? 5 : this.costFor(to))) return "연료 부족";
     if (
       to === "ares" &&
       (!this.w.survival.state.equipped.includes("dustHelmet") ||
@@ -217,11 +272,11 @@ export class SpaceSystem {
     return "";
   }
   launch(to: PlanetId, ascent = false) {
-    if (!["eden", "ares"].includes(to) || (ascent && this.state.launched))
+    if (!planetIds.includes(to) || (ascent && this.state.launched))
       return false;
     const why = this.reason(to, ascent);
     if (why) return this.fail(why);
-    const cost = ascent ? 5 : this.fuelCost;
+    const cost = ascent ? 5 : this.costFor(to);
     this.state.fuel -= cost;
     this.state.trip = {
       id: ++this.state.serial,
@@ -231,7 +286,8 @@ export class SpaceSystem {
       cost,
       remaining: ascent
         ? 20
-        : this.state.upgrades.includes("navigation")
+        : this.w.extreme.state.horizon ||
+            this.state.upgrades.includes("navigation")
           ? 5
           : 8,
     };
@@ -259,7 +315,7 @@ export class SpaceSystem {
             "최초 착륙 비상 귀환 연료 +15 · 이후 현지 결정과 붉은 철로 연료 제작",
           );
         }
-      } else this.once("returnEden");
+      } else if (trip.to === "eden") this.once("returnEden");
     }
     this.w.emit("save", "arrival");
   }
@@ -298,9 +354,10 @@ export class SpaceSystem {
     w.enterRegion(w.region, 360);
     this.state.heat = 0;
     w.survival.state.oxygen = w.survival.oxygen.maximum;
-    w.survival.environment.grace = this.state.upgrades.includes("hull")
-      ? 20
-      : 12;
+    w.survival.environment.grace =
+      this.w.extreme.state.horizon || this.state.upgrades.includes("hull")
+        ? 20
+        : 12;
   }
   transfer(id: ItemId, n: number, toCargo: boolean, warehouse = false) {
     const w = this.w;
@@ -310,7 +367,7 @@ export class SpaceSystem {
       !Object.hasOwn(items, id) ||
       !Number.isInteger(n) ||
       n < 1 ||
-      n > 999
+      n > 31680
     )
       return false;
     const source = warehouse ? w.survival.state.warehouse : w.inventory,
@@ -362,8 +419,9 @@ export class SpaceSystem {
   emergencyFuel() {
     const w = this.w;
     if (!this.docked || this.state.trip) return false;
-    const cost =
-      this.planet === "ares"
+    const cost = extremePlanets[this.planet as ExtremePlanet]
+      ? { [w.deposits[0].item]: 1, [w.deposits[1].item]: 1 }
+      : this.planet === "ares"
         ? { desertCrystal: 1, redIron: 1 }
         : { crystal: 1, copper: 1 };
     if (this.state.fuel > 95 || !w.survival.storage.spend(cost))
@@ -403,7 +461,7 @@ export class SpaceSystem {
     if (this.remoteClock >= 1) {
       const step = Math.min(1, this.remoteClock);
       this.remoteClock = 0;
-      for (const id of ["eden", "ares"] as PlanetId[])
+      for (const id of planetIds)
         if (id !== this.state.location && this.state.planets[id])
           this.withPlanet(id, () => {
             w.colony.tick(step, true);
@@ -420,7 +478,11 @@ export class SpaceSystem {
       w.player.hp = Math.min(
         w.stats.hp,
         w.player.hp +
-          dt * (this.state.upgrades.includes("lifeSupport") ? 16 : 8),
+          dt *
+            (this.w.extreme.state.horizon ||
+            this.state.upgrades.includes("lifeSupport")
+              ? 16
+              : 8),
       );
       this.state.heat = Math.max(0, this.state.heat - dt * 8);
       return;

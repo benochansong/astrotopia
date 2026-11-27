@@ -70,7 +70,7 @@ export function validSurvival(
     !num(s.serial) ||
     !Number.isInteger(s.serial) ||
     !num(s.lastClock, 1e15) ||
-    !array(s.discovered, (id) => Object.hasOwn(items, id), 100) ||
+    !array(s.discovered, (id) => Object.hasOwn(items, id), 250) ||
     !Array.isArray(s.records) ||
     s.records.length > 200 ||
     s.records.some((x: any) => typeof x !== "string" || x.length > 100)

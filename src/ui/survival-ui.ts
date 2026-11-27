@@ -198,7 +198,7 @@ export function survivalHud(w: World) {
     k = e.kind,
     scanner = w.survival.scanner,
     b = w.survival.sentinel;
-  return `${colonyHud(w)}<nav class="survival-shortcuts"><button data-action="hub">L 제작·연구</button>${w.colony.unlocked ? `<button data-action="cb-build">B 건설</button><button data-action="cb-command">O 기지</button>` : ""}<button data-action="database">N 도감</button><button data-action="scan">G 스캐너 ${scanner.cooldown > 0 ? Math.ceil(scanner.cooldown) + "s" : ""}</button><div>${s.quick.map((id, i) => `<button data-action="consume" data-value="${id}"><kbd>${i + 3}</kbd> ${items[id].icon} ${w.inventory[id] ?? 0}</button>`).join("")}</div></nav>${
+  return `${w.extreme.combat.boss || w.space.combat.boss ? "" : colonyHud(w)}<nav class="survival-shortcuts"><button data-action="hub">L 제작·연구</button>${w.colony.unlocked ? `<button data-action="cb-build">B 건설</button><button data-action="cb-command">O 기지</button>` : ""}<button data-action="database">N 도감</button><button data-action="scan">G 스캐너 ${scanner.cooldown > 0 ? Math.ceil(scanner.cooldown) + "s" : ""}</button><div>${s.quick.map((id, i) => `<button data-action="consume" data-value="${id}"><kbd>${i + 3}</kbd> ${items[id].icon} ${w.inventory[id] ?? 0}</button>`).join("")}</div></nav>${
     k !== "safe" || s.oxygen < w.survival.oxygen.maximum - 1
       ? `<section class="survival-hud" style="--risk:${e.data.color}"><strong>${e.data.icon} ${e.data.name}</strong>${k === "hypoxia" || s.oxygen < w.survival.oxygen.maximum - 1 ? `<label>O₂ ${Math.ceil(s.oxygen)} / ${w.survival.oxygen.maximum}<progress max="${w.survival.oxygen.maximum}" value="${s.oxygen}"></progress></label>` : ""}${(
           ["toxic", "radiation", "unstable"] as const

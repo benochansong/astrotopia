@@ -1,3 +1,5 @@
+import { defaultBindings, bindingCodes } from "./systems/bindings";
+import { extremeAction } from "./ui/extreme-ui";
 import { spaceAction } from "./ui/space-ui";
 import {
   colonyAction,
@@ -30,7 +32,7 @@ const storage = new SaveStore({
 let settings = storage.loadSettings();
 const audio = new AudioSystem(settings),
   ui = new Interface(),
-  input = new Input(),
+  input = new Input(() => settings.bindings ?? defaultBindings),
   art = new Art();
 let world: World | null = null,
   mode: "title" | "opening" | "game" = "title",
@@ -191,6 +193,10 @@ ui.action = (action, value) => {
     ].includes(action)
   )
     return;
+  if (world && extremeAction(world, action, value)) {
+    ui.open("space", world, settings);
+    return;
+  }
   if (world && spaceAction(world, action, value)) {
     ui.open("space", world, settings);
     return;
@@ -384,6 +390,24 @@ ui.action = (action, value) => {
   }
 };
 ui.setting = (key, value) => {
+  if (["fog", "cameraSpeed"].includes(key))
+    (settings as any)[key] = Number(value);
+  if (["glow", "waterMotion", "jetAssist", "iceAssist"].includes(key))
+    (settings as any)[key] = value === "true";
+  if (key.startsWith("bind-") && bindingCodes.includes(value)) {
+    const action = key.slice(5),
+      map = settings.bindings ?? { ...defaultBindings };
+    if (Object.hasOwn(defaultBindings, action)) {
+      const old = map[action],
+        other = Object.keys(map).find((k) => map[k] === value);
+      map[action] = value;
+      if (other && other !== action) map[other] = old;
+      settings.bindings = map;
+      input.clear();
+      ui.open("settings", world, settings);
+    }
+  }
+
   if (key === "shake") settings.shake = Number(value);
   if (key === "damageNumbers") settings.damageNumbers = value === "true";
   if (key === "difficulty") {
@@ -599,12 +623,15 @@ class ExpeditionScene extends Phaser.Scene {
           openModal("ending");
         }
       }
+      audio.planet(world.planetId);
       audio.region(
-        world.space.combat.boss
-          ? "colossus"
-          : world.combat.boss.active || world.survival.sentinel.active
-            ? "boss" + world.combat.boss.phase
-            : world.region,
+        world.extreme.combat.boss
+          ? world.extreme.combat.boss.kind
+          : world.space.combat.boss
+            ? "colossus"
+            : world.combat.boss.active || world.survival.sentinel.active
+              ? "boss" + world.combat.boss.phase
+              : world.region,
       );
       if (world.colony.buildMode) builderArt(c, world);
       else art.world(c, world, settings.effects === "low");

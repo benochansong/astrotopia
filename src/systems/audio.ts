@@ -2,6 +2,10 @@ import type { Settings } from "../core/types";
 // All audio is synthesized locally; no samples or external licensing dependencies.
 export class AudioSystem {
   private currentRegion = "";
+  private environment = "eden";
+  planet(id: string) {
+    this.environment = id;
+  }
   private context: AudioContext | null = null;
   private music: GainNode | null = null;
   private sfx: GainNode | null = null;
@@ -53,19 +57,35 @@ export class AudioSystem {
       2,
     );
     const root =
-      id === "colossus"
-        ? 36.7
-        : id === "ship"
-          ? 82.4
-          : id.startsWith("ares")
-            ? 55
-            : id.startsWith("boss")
-              ? 41.2 + Number(id.slice(4)) * 3
-              : id === "valley"
-                ? 73.416
-                : id === "forest"
-                  ? 58.27
-                  : 65.406;
+      id === "leviathan"
+        ? 49
+        : id === "helios"
+          ? 32.7
+          : id === "emperor"
+            ? 43.65
+            : id === "archon"
+              ? 38.9
+              : id.startsWith("inferno")
+                ? 49
+                : id.startsWith("aquaria")
+                  ? 87.3
+                  : id.startsWith("lunaris")
+                    ? 73.4
+                    : id.startsWith("frostia")
+                      ? 98
+                      : id === "colossus"
+                        ? 36.7
+                        : id === "ship"
+                          ? 82.4
+                          : id.startsWith("ares")
+                            ? 55
+                            : id.startsWith("boss")
+                              ? 41.2 + Number(id.slice(4)) * 3
+                              : id === "valley"
+                                ? 73.416
+                                : id === "forest"
+                                  ? 58.27
+                                  : 65.406;
     this.voices.forEach((voice, i) =>
       voice.frequency.setTargetAtTime(
         root * [1, 1.5, 2, 2.52, 3][i],
@@ -99,6 +119,9 @@ export class AudioSystem {
       environmentWarning: [390, 260, 0.4, "sine"],
       craftComplete: [523, 1046, 0.6, "triangle"],
       researchComplete: [440, 1760, 0.8, "sine"],
+      jet: [180, 340, 0.18, "triangle"],
+      swim: [220, 110, 0.2, "sine"],
+      vent: [80, 40, 0.5, "sawtooth"],
       launch: [55, 660, 1.8, "sawtooth"],
       pulse: [700, 140, 0.12, "triangle"],
       rifle: [180, 60, 0.065, "square"],
@@ -146,7 +169,12 @@ export class AudioSystem {
     o.frequency.exponentialRampToValueAtTime(to, t + duration);
     g.gain.setValueAtTime(0.0001, t);
     g.gain.exponentialRampToValueAtTime(
-      name === "machine" ? 0.012 : name === "shoot" ? 0.045 : 0.065,
+      (name === "machine" ? 0.012 : name === "shoot" ? 0.045 : 0.065) *
+        (this.environment === "lunaris"
+          ? 0.5
+          : this.environment === "aquaria"
+            ? 0.75
+            : 1),
       t + 0.008,
     );
     g.gain.exponentialRampToValueAtTime(0.0001, t + duration);

@@ -1,9 +1,11 @@
+import { extremePanel } from "./extreme-ui";
+import { extremePlanets, type ExtremePlanet } from "../extreme/catalog";
 import type { World } from "../core/world";
 import { items, type ItemId } from "../data/content";
 import {
   shipSystems,
   upgrades,
-  starPlanets,
+  navigablePlanets,
   type ShipSystemId,
   type ShipUpgrade,
   type PlanetId,
@@ -35,6 +37,7 @@ export function spacePanel(w: World) {
       ["map", "항성계 지도"],
       ["cargo", "화물 운송"],
       ["bases", "행성 기지"],
+      ["exploration", "환경 장비"],
     ]
       .map(([id, name]) => button(name, "tab", id))
       .join("") +
@@ -62,7 +65,11 @@ export function spacePanel(w: World) {
   if (spaceTab === "ship")
     body =
       '<div class="space-status"><h2>' +
-      (state.upgrades.length ? "PATHFINDER" : "ASTRA-01") +
+      (w.extreme.state.horizon
+        ? "HORIZON"
+        : state.upgrades.length
+          ? "PATHFINDER"
+          : "ASTRA-01") +
       "</h2><p>" +
       state.location.toUpperCase() +
       " · " +
@@ -81,7 +88,7 @@ export function spacePanel(w: World) {
       ) +
       button("항해 연료 충전", "fuel", "", !s.docked) +
       button("현지 광물로 비상 연료 +5", "manual", "", !s.docked) +
-      '</div><p>비상 연료: EDEN 결정 1 + 구리 1 / ARES 사막 결정 1 + 붉은 철 1. 선내에서 전력 없이 제작 가능.</p><div class="space-grid">' +
+      '</div><p>비상 연료: EDEN 결정+구리 / ARES 붉은 철+사막 결정 / FROSTIA 빙하 결정+극저온 광석 / INFERNO 흑요석+이리듐 / AQUARIA 발광 산호+심해 수정 / LUNARIS 월면 수정+우주 금속 각 1개. 선내 무전력 제작.</p><div class="space-grid">' +
       Object.entries(shipSystems)
         .map(
           ([id, d]) =>
@@ -124,7 +131,15 @@ export function spacePanel(w: World) {
   if (spaceTab === "map")
     body =
       '<div class="stellar-map">' +
-      starPlanets
+      navigablePlanets
+        .map((p) => ({
+          ...p,
+          available:
+            extremePlanets[p.id as ExtremePlanet]?.available ?? p.available,
+          hazard: extremePlanets[p.id as ExtremePlanet]?.available
+            ? "극한 환경 · 전용 탐험복 필요"
+            : p.hazard,
+        }))
         .map(
           (p, i) =>
             '<div class="star-node" style="--planet:' +
@@ -152,13 +167,16 @@ export function spacePanel(w: World) {
           "</p>"
         : "") +
       '<div class="space-grid">' +
-      starPlanets
+      navigablePlanets
         .map(
           (p) =>
             "<article><h3>" +
             p.name +
             "</h3><p>Lv." +
             p.level +
+            " · 편도 " +
+            (p.id === "omega" ? "?" : s.costFor(p.id as PlanetId)) +
+            " 연료" +
             " · " +
             p.hazard +
             "</p>" +
@@ -252,6 +270,7 @@ export function spacePanel(w: World) {
         )
         .join("");
   }
+  if (spaceTab === "exploration") body = extremePanel(w);
   return nav + body;
 }
 export function spaceAction(w: World, action: string, value = "") {

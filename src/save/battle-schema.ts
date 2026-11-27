@@ -11,9 +11,9 @@ export const validGear = (g: unknown): g is Gear =>
   /^gear-\d+$/.test(g.id) &&
   Object.hasOwn(gearTemplates, g.template) &&
   (g.upgrade === undefined ||
-    (number(g.upgrade, 5) && Number.isInteger(g.upgrade))) &&
+    (number(g.upgrade, 10) && Number.isInteger(g.upgrade))) &&
   (g.locked === undefined || typeof g.locked === "boolean") &&
-  ["common", "uncommon", "rare", "epic"].includes(g.rarity);
+  ["common", "uncommon", "rare", "epic", "legendary"].includes(g.rarity);
 export function validBattle(b: unknown): b is BattleSave {
   if (!obj(b)) return false;
   for (const key of [
@@ -86,11 +86,17 @@ export function validBattle(b: unknown): b is BattleSave {
   )
     return false;
   if (
-    b.titles.length > 2 ||
-    b.titles.some((s: string) => !["개척자","사막의 개척자"].includes(s)) ||
-    b.story.length > 3 ||
+    b.titles.length > 3 ||
+    b.titles.some(
+      (s: string) =>
+        !["개척자", "사막의 개척자", "극한 세계의 개척자"].includes(s),
+    ) ||
+    b.story.length > 4 ||
     b.story.some(
-      (s: string) => !["titanCore", "coreAnalysis", "engine"].includes(s),
+      (s: string) =>
+        !["titanCore", "coreAnalysis", "engine", "omegaCoordinates"].includes(
+          s,
+        ),
     )
   )
     return false;
@@ -108,7 +114,7 @@ export function validBattle(b: unknown): b is BattleSave {
         !/^loot-\d+$/.test(l.id) ||
         !regionOrder.includes(l.region) ||
         !number(l.x, 10000) ||
-        !number(l.y, 1100) ||
+        !number(l.y, 3000) ||
         !number(l.count, 99) ||
         l.count < 1 ||
         !Number.isInteger(l.count) ||

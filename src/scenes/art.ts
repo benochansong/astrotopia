@@ -1,3 +1,5 @@
+import { extremePlayerEffects } from "./extreme-art";
+import { extremeBackground, extremeTerrain, extremeEnemy } from "./extreme-art";
 import { spaceBackground, spaceEnemy, spaceTerrain } from "./space-art";
 import { drawColony } from "./colony-art";
 import {
@@ -858,13 +860,17 @@ export class Art {
     c.save();
     c.translate(p.x + p.w / 2, p.y + p.h);
     c.scale(p.facing, 1);
-    const running = p.animation === "Walk" || p.animation === "Run",
+    const running =
+        p.animation === "Swim" ||
+        p.animation === "Walk" ||
+        p.animation === "Run",
       stride = running ? Math.sin(time * (p.animation === "Run" ? 17 : 10)) : 0;
     if (p.animation === "Death") {
       c.rotate(-1.4);
       c.translate(20, 0);
     }
     if (p.animation === "Dash") c.rotate(0.2);
+    if (p.animation === "Swim") c.rotate(Math.abs(p.vx) > 30 ? 0.35 : 0.1);
     const bob = running ? Math.abs(stride) * 2 : Math.sin(time * 2) * 0.7;
     c.translate(0, -bob);
     // Boots and articulated legs.
@@ -915,6 +921,7 @@ export class Art {
     c.globalAlpha = 1;
   }
   enemy(c: CanvasRenderingContext2D, e: Enemy, time: number) {
+    if (extremeEnemy(c, e, time)) return;
     if (spaceEnemy(c, e, time)) return;
     if (frontierEnemy(c, e, time, false)) return;
     if (!["slime", "crawler", "manta"].includes(e.kind)) {
@@ -996,7 +1003,11 @@ export class Art {
     enemyMarks(c, e);
   }
   world(c: CanvasRenderingContext2D, w: World, low = false) {
-    if (!spaceBackground(c, w, low) && !frontierBackground(c, w, low))
+    if (
+      !extremeBackground(c, w, low) &&
+      !spaceBackground(c, w, low) &&
+      !frontierBackground(c, w, low)
+    )
       this.background(c, w.region, w.camera, w.time, low);
     if (w.region === "crash" && w.colony.state.enabled && w.colony.night) {
       c.fillStyle = "#08172a55";
@@ -1007,7 +1018,7 @@ export class Art {
       -w.camera.x + (Math.random() - 0.5) * w.camera.shake * w.settings.shake,
       -w.camera.y + (Math.random() - 0.5) * w.camera.shake * w.settings.shake,
     );
-    if (!spaceTerrain(c, w)) this.terrain(c, w);
+    if (!extremeTerrain(c, w) && !spaceTerrain(c, w)) this.terrain(c, w);
     this.landmarks(c, w);
     frontierStructures(c, w);
     drawColony(c, w);
@@ -1084,6 +1095,7 @@ export class Art {
       w.combat.weapons.charge,
       w.combat.weapons.comboStep,
     );
+    extremePlayerEffects(c, w);
     if (w.mining) miningTool(c, w);
     for (const p of w.particles)
       if (p.active) {
@@ -1128,7 +1140,7 @@ export class Art {
     c.restore();
     explorationOverlay(c, w, low);
     // Foreground leaves provide a fourth depth layer, confined to the corners.
-    if (!low) {
+    if (!low && w.planetId === "eden") {
       fern(c, -10, 760, 170, w.region === "valley" ? "#163044" : "#0e3037");
       fern(c, 1295, 755, 140, "#0c2935", 4);
     }

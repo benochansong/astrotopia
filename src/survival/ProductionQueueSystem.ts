@@ -35,7 +35,8 @@ export class ProductionQueueSystem {
       !s.facilities.includes(facility) &&
       !w.colony.state.buildings.some(
         (b) =>
-          b.kind === (facility === "research" ? "lab" : facility) &&
+          (b.kind === (facility === "research" ? "lab" : facility) ||
+            (facility === "research" && b.kind === "quantumLab")) &&
           b.remaining <= 0,
       )
     )

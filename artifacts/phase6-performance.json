@@ -1,0 +1,27 @@
+{
+  "measurements": [
+    {
+      "planet": "aquaria",
+      "gameUpdates": 492,
+      "gameFps": 98.39409635422241,
+      "rafFps": 234.3859368437981,
+      "p95FrameMs": 4.300000000000182,
+      "durationMs": 5000.299999999814
+    },
+    {
+      "planet": "lunaris",
+      "gameUpdates": 483,
+      "gameFps": 96.56523651484747,
+      "rafFps": 237.51449478186086,
+      "p95FrameMs": 4.300000000001091,
+      "durationMs": 5001.800000000372
+    }
+  ],
+  "heap": {
+    "cycles": 60,
+    "before": 8252320,
+    "after": 8300308,
+    "delta": 47988
+  },
+  "scope": "Chrome local development, one 5-second sample per planet; short GC-assisted travel retention check, not a long soak"
+}

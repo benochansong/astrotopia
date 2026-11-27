@@ -1,3 +1,6 @@
+import { defaultBindings, bindingCodes } from "../systems/bindings";
+import { newExtreme } from "../extreme/types";
+import { validExtreme } from "./extreme-schema";
 import { newSpace } from "../space/types";
 import { validSpace } from "./space-schema";
 import { newColony } from "../colony/types";
@@ -14,6 +17,13 @@ import { EquipmentSystem } from "../combat/EquipmentSystem";
 export const SAVE_KEY = "astrotopia.save.v1";
 export const SETTINGS_KEY = "astrotopia.settings.v1";
 export const defaultSettings = (): Settings => ({
+  fog: 1,
+  glow: true,
+  waterMotion: true,
+  cameraSpeed: 1,
+  jetAssist: false,
+  iceAssist: false,
+  bindings: { ...defaultBindings },
   music: 0.35,
   sfx: 0.6,
   effects: "high",
@@ -35,6 +45,22 @@ const object = (v: unknown): v is Record<string, unknown> =>
 export function validSettings(s: unknown): s is Settings {
   return (
     object(s) &&
+    (s.fog === undefined || finite(s.fog, 0, 1)) &&
+    (s.cameraSpeed === undefined || finite(s.cameraSpeed, 0.4, 2)) &&
+    ["glow", "waterMotion", "jetAssist", "iceAssist"].every(
+      (k) => s[k] === undefined || typeof s[k] === "boolean",
+    ) &&
+    (s.bindings === undefined ||
+      (object(s.bindings) &&
+        Object.keys(s.bindings).length ===
+          Object.keys(defaultBindings).length &&
+        Object.entries(s.bindings).every(
+          ([k, v]) =>
+            Object.hasOwn(defaultBindings, k) &&
+            bindingCodes.includes(String(v)),
+        ) &&
+        new Set(Object.values(s.bindings)).size ===
+          Object.keys(defaultBindings).length)) &&
     finite(s.music, 0, 1) &&
     finite(s.sfx, 0, 1) &&
     finite(s.shake, 0, 1) &&
@@ -49,18 +75,18 @@ export function parseSave(raw: string | null): SaveData | null {
     const s = JSON.parse(raw);
     if (
       !object(s) ||
-      ![1, 2, 3, 4, 5].includes(Number(s.version)) ||
+      ![1, 2, 3, 4, 5, 6].includes(Number(s.version)) ||
       !regionOrder.includes(s.region as never) ||
       !finite(s.savedAt, 0, 1e15) ||
-      !finite(s.level, 1, s.version === 5 ? 30 : 15) ||
+      !finite(s.level, 1, s.version === 6 ? 90 : s.version === 5 ? 30 : 15) ||
       !Number.isInteger(s.level)
     )
       return null;
     if (
       !finite(s.x, 0, Number(s.version) >= 4 ? 10000 : 5200) ||
-      !finite(s.y, -100, 1000) ||
+      !finite(s.y, -100, 3000) ||
       !finite(s.xp, 0, xpRequired(s.level)) ||
-      !finite(s.hp, 0, 1000) ||
+      !finite(s.hp, 0, 3000) ||
       !finite(s.energy, 0, 1000)
     )
       return null;
@@ -96,7 +122,9 @@ export function parseSave(raw: string | null): SaveData | null {
               ? 18
               : s.version === 4
                 ? 28
-                : 38,
+                : s.version === 5
+                  ? 38
+                  : 56,
       ) ||
       !Number.isInteger(p.quest) ||
       !Array.isArray(p.discovered) ||
@@ -156,7 +184,20 @@ export function parseSave(raw: string | null): SaveData | null {
       s.space = newSpace();
       s.version = 5;
     }
-    if (!validSpace(s.space, s.survival, String(s.region))) return null;
+    if (
+      !validSpace(
+        s.space,
+        s.survival,
+        String(s.region),
+        Boolean((s.extreme as any)?.horizon),
+      )
+    )
+      return null;
+    if (s.version === 5) {
+      s.extreme = newExtreme();
+      s.version = 6;
+    }
+    if (!validExtreme(s.extreme)) return null;
     return s as unknown as SaveData;
   } catch {
     return null;
@@ -198,7 +239,7 @@ export class SaveStore {
       if (previous) {
         try {
           if (
-            [2, 3, 4].includes(JSON.parse(previous).version) &&
+            [2, 3, 4, 5].includes(JSON.parse(previous).version) &&
             !this.storage.getItem(
               SAVE_KEY + ".backup.v" + JSON.parse(previous).version,
             )

@@ -1,3 +1,9 @@
+import {
+  defaultBindings,
+  bindingCodes,
+  bindingNames,
+} from "../systems/bindings";
+import { extremeEnemies } from "../extreme/regions";
 import { spacePanel } from "./space-ui";
 import { colonyPanel } from "./colony-ui";
 import {
@@ -90,9 +96,9 @@ export class Interface {
     this.root.addEventListener("input", (event) => {
       const search = event.target as HTMLInputElement;
       if (search.id === "cargo-search") {
-        for (const row of Array.from(this.dialog.querySelectorAll<HTMLElement>(
-          ".cargo-row",
-        )))
+        for (const row of Array.from(
+          this.dialog.querySelectorAll<HTMLElement>(".cargo-row"),
+        ))
           row.hidden = !row.textContent?.includes(search.value);
         return;
       }
@@ -118,7 +124,7 @@ export class Interface {
     this.hud.hidden = true;
     this.screen.hidden = false;
     this.close();
-    this.screen.innerHTML = `<section class="title-screen"><div class="brand-top"><span class="orbit-mark">✧</span> INTERSTELLAR EXPLORATION PROGRAM <span class="phase-tag">PHASE 05</span></div><div class="title-copy"><p class="eyebrow">BEYOND EDEN</p><h1>ASTRO<span>TOPIA</span></h1><p class="tagline">ONE PLANET WAS ONLY THE BEGINNING.</p><p class="title-description">낯선 별에 남기는, 당신의 첫 번째 발자국.<br>아무도 기록하지 않은 세계가 기다립니다.</p></div><nav class="main-menu" aria-label="메인 메뉴"><button class="primary start" data-action="new"><span class="button-glyph">✦</span>${ko.newGame}<span class="button-end">NEW EXPEDITION</span></button><button class="continue" data-action="continue" ${canContinue ? "" : "disabled"}><span class="button-glyph">⌁</span>${ko.continue}<span class="button-end">${canContinue ? "RESUME EXPEDITION" : "저장된 탐험 없음"}</span></button><div class="menu-links"><button data-action="settings">${ko.settings}</button><span></span><button data-action="controls">${ko.controls}</button><span></span><button data-action="credits">${ko.credits}</button></div></nav><div class="planet-label"><span class="crosshair">+</span><p>DESTINATION 001</p><h2>EDEN</h2><div>미탐사 생명체 행성</div><dl><dt>중력</dt><dd>0.9 G</dd><dt>대기</dt><dd>호흡 가능</dd></dl></div><footer class="title-footer"><span><i></i> EXPLORATION SYSTEMS ONLINE</span><span>2478 CE <b> / </b> PROJECT ASTROTOPIA</span><span>키보드 · PC 브라우저 권장</span></footer>${error ? `<p class="storage-error">${escape(error)}</p>` : ""}</section>`;
+    this.screen.innerHTML = `<section class="title-screen"><div class="brand-top"><span class="orbit-mark">✧</span> INTERSTELLAR EXPLORATION PROGRAM <span class="phase-tag">PHASE 06</span></div><div class="title-copy"><p class="eyebrow">EXTREME WORLDS</p><h1>ASTRO<span>TOPIA</span></h1><p class="tagline">MASTER THE ENVIRONMENT.</p><p class="title-description">낯선 별에 남기는, 당신의 첫 번째 발자국.<br>아무도 기록하지 않은 세계가 기다립니다.</p></div><nav class="main-menu" aria-label="메인 메뉴"><button class="primary start" data-action="new"><span class="button-glyph">✦</span>${ko.newGame}<span class="button-end">NEW EXPEDITION</span></button><button class="continue" data-action="continue" ${canContinue ? "" : "disabled"}><span class="button-glyph">⌁</span>${ko.continue}<span class="button-end">${canContinue ? "RESUME EXPEDITION" : "저장된 탐험 없음"}</span></button><div class="menu-links"><button data-action="settings">${ko.settings}</button><span></span><button data-action="controls">${ko.controls}</button><span></span><button data-action="credits">${ko.credits}</button></div></nav><div class="planet-label"><span class="crosshair">+</span><p>DESTINATION 001</p><h2>EDEN</h2><div>미탐사 생명체 행성</div><dl><dt>중력</dt><dd>0.9 G</dd><dt>대기</dt><dd>호흡 가능</dd></dl></div><footer class="title-footer"><span><i></i> EXPLORATION SYSTEMS ONLINE</span><span>2478 CE <b> / </b> PROJECT ASTROTOPIA</span><span>키보드 · PC 브라우저 권장</span></footer>${error ? `<p class="storage-error">${escape(error)}</p>` : ""}</section>`;
   }
   game() {
     this.screen.hidden = true;
@@ -172,14 +178,61 @@ export class Interface {
         (w.space.combat.core ? "코어 노출" : "공격 예고를 확인하세요") +
         "</small></div>"
       : "";
-    const finalHtml = html + battleHud(w) + survivalHud(w) + spaceHud + bossHud;
+    const ext = w.extreme,
+      eb = ext.combat.boss;
+    const eh = ext.active
+      ? '<div class="space-environment">' +
+        w.planetId.toUpperCase() +
+        " · " +
+        w.space.gravity +
+        " G · " +
+        (w.planetId === "aquaria"
+          ? "수심 " +
+            ext.physics.depth +
+            "m / 내압 " +
+            ext.environment.safeDepth +
+            "m · 수압 위험 " +
+            Math.round(ext.state.pressure) +
+            "% · "
+          : w.planetId === "lunaris"
+            ? "추진 " +
+              Math.round(ext.state.jetEnergy) +
+              "% · 방사선 " +
+              Math.round(ext.state.radiation) +
+              "% · "
+            : "") +
+        "체온 위험 " +
+        Math.round(ext.state.temperature) +
+        "% · " +
+        (ext.environment.weather.warning
+          ? "기상 경고"
+          : ext.environment.weather.active
+            ? ext.environment.weather.name
+            : "안정") +
+        "</div>"
+      : "";
+    const bh = eb
+      ? '<div class="space-boss"><b>' +
+        extremeEnemies[eb.kind as keyof typeof extremeEnemies].name +
+        " · PHASE " +
+        ext.combat.phase +
+        '</b><progress max="' +
+        eb.maxHp +
+        '" value="' +
+        eb.hp +
+        '"></progress><small>' +
+        (ext.combat.core ? "코어 노출" : "F 보호 시설 · 산소/체온 회복") +
+        "</small></div>"
+      : "";
+    const finalHtml =
+      html + battleHud(w) + survivalHud(w) + spaceHud + bossHud + eh + bh;
     if (this.lastHud !== finalHtml) {
       this.hud.innerHTML = finalHtml;
       this.lastHud = finalHtml;
     }
   }
   minimap(w: World) {
-    return `<svg viewBox="0 0 260 65" aria-hidden="true">${w.map.platforms.map((p) => `<rect x="${(p.x / w.map.width) * 260}" y="${(p.y / 1000) * 58}" width="${(p.w / w.map.width) * 260}" height="${p.oneWay ? 2 : 6}" fill="#80b9ab" opacity=".65"/>`).join("")}${w.map.landmarks.map((l) => `<circle cx="${(l.x / w.map.width) * 260}" cy="${(l.y / 1000) * 58 - 4}" r="2" fill="#d5c994"/>`).join("")}<circle cx="${(w.player.x / w.map.width) * 260}" cy="${(w.player.y / 1000) * 58}" r="3" fill="#f0f6d7"/></svg>`;
+    return `<svg viewBox="0 0 260 65" aria-hidden="true">${w.map.platforms.map((p) => `<rect x="${(p.x / w.map.width) * 260}" y="${(p.y / (w.planetId === "aquaria" ? 2800 : 1000)) * 58}" width="${(p.w / w.map.width) * 260}" height="${p.oneWay ? 2 : 6}" fill="#80b9ab" opacity=".65"/>`).join("")}${w.map.landmarks.map((l) => `<circle cx="${(l.x / w.map.width) * 260}" cy="${(l.y / (w.planetId === "aquaria" ? 2800 : 1000)) * 58 - 4}" r="2" fill="#d5c994"/>`).join("")}<circle cx="${(w.player.x / w.map.width) * 260}" cy="${(w.player.y / (w.planetId === "aquaria" ? 2800 : 1000)) * 58}" r="3" fill="#f0f6d7"/></svg>`;
   }
   open(modal: Exclude<Modal, null>, w: World | null, s: Settings) {
     if (!this.modal) this.previousFocus = document.activeElement as HTMLElement;
@@ -232,6 +285,86 @@ export class Interface {
         '<button class="wide" data-action="fullscreen">',
         `<div class="settings-grid"><label for="shake">화면 흔들림</label><input id="shake" data-setting="shake" type="range" min="0" max="1" step=".1" value="${s.shake}"><label for="damageNumbers">피해 숫자</label><select id="damageNumbers" data-setting="damageNumbers"><option value="true" ${s.damageNumbers ? "selected" : ""}>표시</option><option value="false" ${!s.damageNumbers ? "selected" : ""}>숨김</option></select><label for="difficulty">난이도</label><select id="difficulty" data-setting="difficulty"><option value="explorer" ${s.difficulty === "explorer" ? "selected" : ""}>탐험가</option><option value="normal" ${s.difficulty === "normal" ? "selected" : ""}>일반</option><option value="veteran" ${s.difficulty === "veteran" ? "selected" : ""}>베테랑</option></select></div><button class="wide" data-action="fullscreen">`,
       );
+    if (modal === "settings")
+      content +=
+        '<h3>극한 환경 접근성</h3><div class="settings-grid">' +
+        [
+          ["fog", "환경 안개", s.fog ?? 1, 0, 1],
+          ["cameraSpeed", "카메라 이동 민감도", s.cameraSpeed ?? 1, 0.4, 2],
+        ]
+          .map(
+            ([id, name, val, min, max]) =>
+              '<label for="' +
+              id +
+              '">' +
+              name +
+              '</label><input id="' +
+              id +
+              '" data-setting="' +
+              id +
+              '" type="range" min="' +
+              min +
+              '" max="' +
+              max +
+              '" step=".1" value="' +
+              val +
+              '">',
+          )
+          .join("") +
+        (["glow", "waterMotion", "jetAssist", "iceAssist"] as const)
+          .map(
+            (id, i) =>
+              '<label for="' +
+              id +
+              '">' +
+              [
+                "환경 발광",
+                "수중 시각 움직임",
+                "제트팩 제동 보조",
+                "빙판 이동 보조",
+              ][i] +
+              '</label><select id="' +
+              id +
+              '" data-setting="' +
+              id +
+              '"><option value="true" ' +
+              ((s[id] ?? i < 2) ? "selected" : "") +
+              '>사용</option><option value="false" ' +
+              (!(s[id] ?? i < 2) ? "selected" : "") +
+              ">끄기</option></select>",
+          )
+          .join("") +
+        '</div><p>핵심 위험·공격 예고는 항상 표시합니다. 시각 설정은 피해 판정에 영향을 주지 않습니다.</p><h3>탐험 키 재설정</h3><p>중복 키는 서로 교환합니다. 메뉴·스킬 키와 방향키는 고정입니다.</p><div class="settings-grid">' +
+        Object.entries(bindingNames)
+          .map(
+            ([id, name]) =>
+              '<label for="bind-' +
+              id +
+              '">' +
+              name +
+              '</label><select id="bind-' +
+              id +
+              '" data-setting="bind-' +
+              id +
+              '">' +
+              bindingCodes
+                .map(
+                  (code) =>
+                    '<option value="' +
+                    code +
+                    '" ' +
+                    ((s.bindings ?? defaultBindings)[id] === code
+                      ? "selected"
+                      : "") +
+                    ">" +
+                    code +
+                    "</option>",
+                )
+                .join("") +
+              "</select>",
+          )
+          .join("") +
+        "</div>";
     if (modal === "controls") {
       heading = "탐험가의 기본 조작";
       eyebrow = "EXPLORER FIELD GUIDE";
@@ -241,7 +374,7 @@ export class Interface {
       heading = "작은 발자국에서 시작된 세계";
       eyebrow = "PROJECT ASTROTOPIA";
       content =
-        '<p>기획 · ASTROTOPIA</p><p>게임 엔진 · Phaser 3<br>개발 · TypeScript / Vite<br>아트 · 자체 제작 절차적 벡터 그래픽<br>사운드 · Web Audio 합성</p><p class="muted">외부 상용 게임의 이미지, 캐릭터, 음악을 사용하지 않았습니다.<br>THE FIRST LANDING · DEVELOPMENT PHASE 02</p>';
+        '<p>기획 · ASTROTOPIA</p><p>게임 엔진 · Phaser 3<br>개발 · TypeScript / Vite<br>아트 · 자체 제작 절차적 벡터 그래픽<br>사운드 · Web Audio 합성</p><p class="muted">외부 상용 게임의 이미지, 캐릭터, 음악을 사용하지 않았습니다.<br>EXTREME WORLDS · DEVELOPMENT PHASE 06</p>';
     }
     if (modal === "confirm") {
       heading = "새로운 모험을 시작할까요?";
@@ -320,7 +453,7 @@ export class Interface {
       el.innerHTML =
         gearDetail(w, id, confirm) +
         (g && p
-          ? `<div class="upgrade-detail"><button data-action="gear-lock" data-value="${id}">${g.locked ? "잠금 해제" : "장비 잠금 · 분해 방지"}</button><h4>확정 강화 +${p.level} → +${Math.min(5, p.level + 1)}</h4><p>${Object.entries(
+          ? `<div class="upgrade-detail"><button data-action="gear-lock" data-value="${id}">${g.locked ? "잠금 해제" : "장비 잠금 · 분해 방지"}</button><h4>확정 강화 +${p.level} → +${Math.min(10, p.level + 1)}</h4><p>${Object.entries(
               p.after,
             )
               .filter(([k, v]) => v !== (p.before as Record<string, number>)[k])
@@ -328,9 +461,11 @@ export class Interface {
                 ([k, v]) =>
                   `${statNames[k as keyof typeof statNames]} ${(p.before as Record<string, number>)[k]?.toFixed(2)} → ${Number(v).toFixed(2)}`,
               )
+              .join(" · ")}</p><small>${Object.entries(p.cost)
+              .map(([id, n]) => items[id as ItemId].name + " " + n)
               .join(
                 " · ",
-              )}</p><small>철괴 ${p.cost.ironBar} · 정제 에너지 셀 ${p.cost.refinedCell} · ${p.credits} CR · 실패/파괴 없음</small><button data-action="gear-upgrade" data-value="${id}" ${p.level >= 5 || !w.survival.inBase || !w.survival.state.technologies.includes("upgrade") ? "disabled" : ""}>강화 실행</button><small>기지 장비 작업소와 장비 강화 연구가 필요합니다.</small></div>`
+              )} · ${p.credits} CR · 실패/파괴 없음</small><button data-action="gear-upgrade" data-value="${id}" ${p.level >= 10 || (p.level >= 5 && !w.survival.state.technologies.includes("quantumEngineering")) || !w.survival.inBase || !w.survival.state.technologies.includes("upgrade") ? "disabled" : ""}>강화 실행</button><small>기지 장비 작업소·강화 연구 필요. +6 이상은 양자 항법 공학 필요.</small></div>`
           : "");
       el.scrollIntoView({ block: "nearest" });
     }

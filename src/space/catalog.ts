@@ -1,8 +1,20 @@
+import {
+  extremeIds,
+  extremePlanets,
+  type ExtremePlanet,
+  type ExtremeRegion,
+} from "../extreme/catalog";
 import type { Cost, EnvGearId, Recipe } from "../survival/catalog";
 import type { ItemId } from "../data/content";
-export type PlanetId = "eden" | "ares";
+export type PlanetId = "eden" | "ares" | ExtremePlanet;
+export const planetIds: PlanetId[] = ["eden", "ares", ...extremeIds];
 export type SpaceRegion =
-  "ship" | "aresLanding" | "aresDunes" | "aresCanyon" | "aresFoundry";
+  | ExtremeRegion
+  | "ship"
+  | "aresLanding"
+  | "aresDunes"
+  | "aresCanyon"
+  | "aresFoundry";
 export const spaceResources = {
   redIron: ["붉은 철광석", "광물", "#d59881"],
   pureTitanium: ["고순도 티타늄", "광물", "#c9c9c1"],
@@ -409,9 +421,15 @@ export const aresDeposits = [
   seconds: number;
 }[];
 export const planetForRegion = (region: string): PlanetId =>
-  region.startsWith("ares") ? "ares" : "eden";
+  extremeIds.find((id) => region.startsWith(id)) ??
+  (region.startsWith("ares") ? "ares" : "eden");
 export const baseForPlanet = (planet: PlanetId) =>
-  planet === "ares" ? ("aresLanding" as const) : ("crash" as const);
+  planet === "eden"
+    ? ("crash" as const)
+    : ((planet + "Landing") as Exclude<
+        SpaceRegion,
+        "ship" | "aresDunes" | "aresCanyon" | "aresFoundry"
+      >);
 const quests: [string, string, [string, string, number][]][] = [
   [
     "별을 향한 준비",
@@ -509,4 +527,12 @@ export const spaceQuests = quests.map(([name, story, goals], i) => ({
   story,
   goals,
   xp: 550 + i * 80,
+}));
+
+export const navigablePlanets = starPlanets.map((p) => ({
+  ...p,
+  available: extremePlanets[p.id as ExtremePlanet]?.available ?? p.available,
+  hazard: extremePlanets[p.id as ExtremePlanet]?.available
+    ? "극한 환경 · 전용 탐험복 필요"
+    : p.hazard,
 }));

@@ -15,6 +15,20 @@ export class ProjectileSystem {
     pierce = false,
     blast = 0,
   ) {
+    const w = this.w;
+    if (w.extreme.physics.swimming || w.planetId === "lunaris") {
+      if (vy === 0 && w.extreme.physics.aim) {
+        const speed = Math.abs(vx);
+        vx *= 0.707;
+        vy = speed * w.extreme.physics.aim * 0.707;
+      }
+      if (w.extreme.physics.swimming) {
+        const factor = a.element === "physical" ? 0.55 : 0.8;
+        vx *= factor;
+        vy *= factor;
+        range *= 0.85;
+      }
+    }
     const b = this.w.bullets.find((b) => !b.active);
     if (!b) return false;
     Object.assign(b, {

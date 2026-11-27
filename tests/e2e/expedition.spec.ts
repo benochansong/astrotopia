@@ -160,6 +160,8 @@ test("settings, confirmation, pause and corrupt-save recovery", async ({
   await page.keyboard.press("Tab");
   await expect(page.getByRole("button", { name: /새로운 모험/ })).toBeFocused();
   await page.keyboard.press("Tab");
+  await expect(page.getByRole("button", { name: /협동 탐험/ })).toBeFocused();
+  await page.keyboard.press("Tab");
   await expect(
     page.getByRole("button", { name: "설정", exact: true }),
   ).toBeFocused();

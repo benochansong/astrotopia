@@ -1,0 +1,25 @@
+{
+  "transport": "real WebSocket delay proxy; half delay per direction",
+  "measurements": [
+    {
+      "delay": 20,
+      "distance": 167.99999999999955,
+      "serverMs": 2.5999000000001615
+    },
+    {
+      "delay": 50,
+      "distance": 167.99999999999955,
+      "serverMs": 2.151499999999942
+    },
+    {
+      "delay": 100,
+      "distance": 167.99999999999955,
+      "serverMs": 3.1283999999996013
+    },
+    {
+      "delay": 200,
+      "distance": 167.99999999999955,
+      "serverMs": 2.681800000000294
+    }
+  ]
+}

@@ -1015,7 +1015,7 @@ export class Art {
     c.restore();
     enemyMarks(c, e);
   }
-  world(c: CanvasRenderingContext2D, w: World, low = false) {
+  world(c: CanvasRenderingContext2D, w: World, low = false, actors = true) {
     if (
       !civilizationBackground(c, w) &&
       !ancientBackground(c, w, low) &&
@@ -1096,7 +1096,7 @@ export class Art {
       glow(c, d.x, d.y, 22, items[d.item].color + "44");
       crystal(c, d.x, d.y + Math.sin(w.time * 3) * 3, 16, items[d.item].color);
     }
-    for (const e of w.enemies)
+    for (const e of actors ? w.enemies : [])
       if (e.state !== "Death" && Math.abs(e.x - w.camera.x - 640) < 800)
         this.enemy(c, e, w.time);
     for (const b of w.bullets)
@@ -1109,16 +1109,19 @@ export class Art {
         );
         ellipse(c, b.x, b.y, 5, 2, "#efffd3");
       }
-    this.player(
-      c,
-      w.player,
-      w.time,
-      w.combat.weapons.id,
-      w.combat.weapons.charge,
-      w.combat.weapons.comboStep,
-    );
-    extremePlayerEffects(c, w);
-    classArt(c, w);
+    if (actors)
+      this.player(
+        c,
+        w.player,
+        w.time,
+        w.combat.weapons.id,
+        w.combat.weapons.charge,
+        w.combat.weapons.comboStep,
+      );
+    if (actors) {
+      extremePlayerEffects(c, w);
+      classArt(c, w);
+    }
     if (w.mining) miningTool(c, w);
     for (const p of w.particles)
       if (p.active) {

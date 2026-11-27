@@ -1,3 +1,4 @@
+import { OnlineClient } from "./online/OnlineClient";
 import {
   civilizationAction,
   civilLive,
@@ -45,15 +46,19 @@ const audio = new AudioSystem(settings),
   input = new Input(() => settings.bindings ?? defaultBindings),
   art = new Art();
 let world: World | null = null,
-  mode: "title" | "opening" | "game" = "title",
+  mode: "title" | "opening" | "game" | "online" = "title",
   storyTime = 0,
   lastStory = -1,
   hudClock = 0,
   ambientTime = 0,
   stepTime = 0;
+const online = new OnlineClient(
+  () => showTitle(),
+  () => input.clear(),
+);
 let modalReturn: Modal = null;
 const save = () => {
-  if (!world) return false;
+  if (!world || mode === "online") return false;
   const ok = storage.save(world.snapshot(settings));
   if (!ok) ui.toast(storage.error);
   return ok;
@@ -190,6 +195,15 @@ window.addEventListener(
   { passive: false },
 );
 ui.action = (action, value) => {
+  if (action === "online") {
+    mode = "online";
+    world = null;
+    input.clear();
+    ui.close();
+    ui.screen.hidden = ui.hud.hidden = true;
+    void online.open();
+    return;
+  }
   if (
     world?.space.state.trip &&
     ![
@@ -617,6 +631,7 @@ class ExpeditionScene extends Phaser.Scene {
           get modal() {
             return ui.modal;
           },
+          online: () => online.metrics(),
           save,
           storage,
         },
@@ -627,7 +642,8 @@ class ExpeditionScene extends Phaser.Scene {
     const dt = Math.min(delta / 1000, 0.05);
     ambientTime += dt;
     const c = this.surface.getContext();
-    if (mode === "title") art.title(c, ambientTime);
+    if (mode === "online") online.frame(c, dt, input.frame());
+    else if (mode === "title") art.title(c, ambientTime);
     else if (mode === "opening") {
       storyTime += dt;
       const step = Math.min(7, Math.floor(storyTime / 3));

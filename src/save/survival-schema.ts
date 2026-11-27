@@ -29,7 +29,11 @@ export function validSurvival(
   )
     return false;
   if (
-    !array(s.owned, (id) => Object.hasOwn(environmentGear, id), 40) ||
+    !array(
+      s.owned,
+      (id) => Object.hasOwn(environmentGear, id),
+      Object.keys(environmentGear).length,
+    ) ||
     !array(s.equipped, (id) => s.owned.includes(id), 8)
   )
     return false;

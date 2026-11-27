@@ -170,6 +170,8 @@ export class ClassSystem {
       w.combat.training ||
       w.combat.boss.active ||
       w.extreme.combat.boss ||
+      w.omega.combat.boss ||
+      w.omega.endgame.original ||
       w.survival.sentinel.active ||
       w.space.combat.boss ||
       w.colony.siege
@@ -1045,6 +1047,7 @@ export class ClassSystem {
   isBoss(e: Enemy) {
     return (
       e === this.w.extreme.combat.boss ||
+      e === this.w.omega.combat.boss ||
       ["titan", "colossus", "sentinel", "conduit"].includes(e.kind)
     );
   }

@@ -1,3 +1,4 @@
+import { ancientEnv, ancientRecipes, ancientTech } from "../ancient/catalog";
 import {
   extremeGear,
   installExtremeRecipes,
@@ -136,6 +137,7 @@ export const toolsData = [
 ] as const;
 export const environmentGear = {
   ...desertGear,
+  ...ancientEnv,
   ...extremeGear,
   mask: {
     name: "정화 마스크",
@@ -374,7 +376,10 @@ for (const [id, tech, cost] of [
     5,
   );
 const envCosts: Record<
-  Exclude<EnvGearId, keyof typeof desertGear | keyof typeof extremeGear>,
+  Exclude<
+    EnvGearId,
+    keyof typeof desertGear | keyof typeof extremeGear | keyof typeof ancientEnv
+  >,
   [string, Cost]
 > = {
   mask: ["filter", { wovenFiber: 3, copperBar: 2, polymer: 1 }],
@@ -694,6 +699,7 @@ export function regionEnvironment(
   x: number,
   y: number,
 ): EnvironmentKind {
+  if (id.startsWith("omega")) return x < 650 ? "safe" : "radiation";
   if (id.startsWith("inferno"))
     return id.endsWith("Landing") && x < 650 ? "safe" : "toxic";
   if (
@@ -753,3 +759,6 @@ for (const row of spaceTechRows)
 
 installExtremeRecipes(recipes);
 for (const t of extremeTech) technologies[t.id] = t;
+
+for (const r of ancientRecipes) recipes[r.id] = r;
+for (const t of ancientTech) technologies[t.id] = t;

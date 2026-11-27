@@ -1,4 +1,14 @@
 import {
+  ancientItems,
+  omegaRegionIds,
+  type AncientItem,
+} from "../ancient/catalog";
+import {
+  ancientRegions,
+  ancientEnemies,
+  type AncientEnemy,
+} from "../ancient/regions";
+import {
   extremeItems,
   extremeQuests,
   type ExtremeItem,
@@ -29,6 +39,7 @@ import type { Element, EliteAffix } from "../combat/types";
 export type RegionId =
   SpaceRegion | FrontierRegion | "crash" | "forest" | "valley";
 export type ItemId =
+  | AncientItem
   | ExtremeItem
   | SpaceItem
   | PartId
@@ -46,6 +57,7 @@ export type ItemId =
   | "ancientCrystal"
   | "titanCore";
 export type EnemyKind =
+  | AncientEnemy
   | ExtremeEnemy
   | SpaceEnemy
   | FrontierEnemy
@@ -183,6 +195,7 @@ export const items: Record<
     icon: string;
   }
 > = {
+  ...ancientItems,
   ...extremeItems,
   ...spaceItems,
   ...extraItems,
@@ -288,6 +301,7 @@ export interface EnemyData {
   flying?: boolean;
 }
 export const enemyData: Record<EnemyKind, EnemyData> = {
+  ...ancientEnemies,
   ...extremeEnemies,
   ...spaceEnemies,
   ...frontierEnemies,
@@ -463,6 +477,7 @@ const node = (
   count = 1,
 ): Resource => ({ id, item, x, y, count, respawn: 35 });
 export const regions: Record<RegionId, Region> = {
+  ...ancientRegions,
   ...extremeRegions,
   ...spaceRegions,
   ...frontierRegions,
@@ -641,6 +656,7 @@ export const regionOrder: RegionId[] = [
   "aresDunes",
   "aresCanyon",
   "aresFoundry",
+  ...omegaRegionIds,
   ...extremeRegionIds,
 ];
 export const questData = [

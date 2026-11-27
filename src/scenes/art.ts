@@ -1,3 +1,9 @@
+import {
+  ancientBackground,
+  ancientTerrain,
+  ancientEnemy,
+  ancientFilm,
+} from "./ancient-art";
 import { classArt } from "./class-art";
 import { extremePlayerEffects } from "./extreme-art";
 import { extremeBackground, extremeTerrain, extremeEnemy } from "./extreme-art";
@@ -922,6 +928,7 @@ export class Art {
     c.globalAlpha = 1;
   }
   enemy(c: CanvasRenderingContext2D, e: Enemy, time: number) {
+    if (ancientEnemy(c, e, time)) return;
     if (extremeEnemy(c, e, time)) return;
     if (spaceEnemy(c, e, time)) return;
     if (frontierEnemy(c, e, time, false)) return;
@@ -1005,6 +1012,7 @@ export class Art {
   }
   world(c: CanvasRenderingContext2D, w: World, low = false) {
     if (
+      !ancientBackground(c, w, low) &&
       !extremeBackground(c, w, low) &&
       !spaceBackground(c, w, low) &&
       !frontierBackground(c, w, low)
@@ -1019,7 +1027,8 @@ export class Art {
       -w.camera.x + (Math.random() - 0.5) * w.camera.shake * w.settings.shake,
       -w.camera.y + (Math.random() - 0.5) * w.camera.shake * w.settings.shake,
     );
-    if (!extremeTerrain(c, w) && !spaceTerrain(c, w)) this.terrain(c, w);
+    if (!ancientTerrain(c, w) && !extremeTerrain(c, w) && !spaceTerrain(c, w))
+      this.terrain(c, w);
     this.landmarks(c, w);
     frontierStructures(c, w);
     drawColony(c, w);
@@ -1153,6 +1162,7 @@ export class Art {
     shade.addColorStop(1, "#07162666");
     c.fillStyle = shade;
     c.fillRect(0, 0, 1280, 720);
+    ancientFilm(c, w);
     if (w.transition > 0) {
       c.fillStyle = `rgba(8,23,36,${Math.min(1, w.transition * 1.5)})`;
       c.fillRect(0, 0, 1280, 720);

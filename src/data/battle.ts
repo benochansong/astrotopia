@@ -1,3 +1,4 @@
+import { ancientGear } from "../ancient/catalog";
 import { classGear } from "../classes/catalog";
 import { extremePlanets, type ExtremePlanet } from "../extreme/catalog";
 import { extremeRegions } from "../extreme/regions";
@@ -231,6 +232,7 @@ export interface GearTemplate {
   icon: string;
 }
 export const gearTemplates: Record<string, GearTemplate> = {
+  ...ancientGear,
   ...classGear,
   ...craftedGear,
   ...Object.fromEntries(

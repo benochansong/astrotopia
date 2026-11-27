@@ -2853,3 +2853,125 @@ progress::-webkit-progress-value {
 .player-heading small {
   font-size: 9px;
 }
+
+/* AETERNUM */
+.ancient-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.ancient-panel {
+  color: #e2dbe9;
+}
+.ancient-banner {
+  padding: 28px;
+  border: 1px solid #ae91c777;
+  background: linear-gradient(120deg, #161e39, #3c2948);
+  margin-bottom: 20px;
+}
+.ancient-banner span {
+  letter-spacing: 0.22em;
+  font-size: 11px;
+  color: #dec18f;
+}
+.ancient-banner h2 {
+  letter-spacing: 0.1em;
+  font-size: 30px;
+}
+.ancient-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.ancient-card {
+  padding: 18px;
+  border: 1px solid #ac94bd44;
+  background: #19243988;
+  margin-bottom: 10px;
+}
+.ancient-card h3 {
+  color: #e8d2ae;
+  margin: 0 0 10px;
+}
+.ancient-card p {
+  line-height: 1.7;
+  font-size: 13px;
+  color: #c7bbd3;
+}
+.ancient-puzzle,
+.ancient-confirm {
+  padding: 24px;
+  border: 1px solid #dfc491;
+  background: #33243b;
+}
+.ancient-puzzle button {
+  margin: 5px;
+}
+.ancient-open {
+  position: absolute;
+  right: 28px;
+  top: 280px;
+  pointer-events: auto;
+}
+.ancient-skip {
+  position: absolute;
+  right: 30px;
+  bottom: 35px;
+  z-index: 25;
+  pointer-events: auto;
+}
+.ancient-challenge {
+  position: absolute;
+  left: 28px;
+  top: 145px;
+  width: 310px;
+  background: #101b2fe8;
+  border: 1px solid #d7bd8e;
+  padding: 16px;
+  pointer-events: auto;
+}
+.ancient-challenge p {
+  font-size: 13px;
+}
+.ancient-challenge button {
+  display: block;
+  margin-top: 10px;
+}
+.ancient-challenge span {
+  font-size: 12px;
+}
+
+#hud:has(.ancient-open) .quest-panel {
+  display: none;
+}
+.ancient-quest {
+  position: absolute;
+  right: 28px;
+  top: 330px;
+  width: 245px;
+  background: #152137b8;
+  padding: 16px;
+  color: #dfd0e8;
+}
+.ancient-quest span {
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  color: #d2bd93;
+}
+.ancient-quest p {
+  font-size: 16px;
+}
+.ancient-quest small {
+  font-size: 11px;
+}
+#hud:has(.space-boss) .ancient-quest {
+  display: none;
+}
+#hud:has(.ancient-skip) > :not(.ancient-skip) {
+  visibility: hidden;
+}
+
+#ui:has(.ancient-skip) #toasts {
+  visibility: hidden;
+}

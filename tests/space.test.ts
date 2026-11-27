@@ -103,7 +103,7 @@ it("rejects malformed cargo/trips and preserves legacy progress", () => {
   delete s.space;
   s.region = "crash";
   const m = parseSave(JSON.stringify(s));
-  expect(m?.version).toBe(7);
+  expect(m?.version).toBe(8);
   expect(m?.colony.ship).toEqual(w.colony.state.ship);
 });
 it("requires actual gear and fuel; local renewable fuel cannot overfill", () => {

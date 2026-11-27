@@ -13,7 +13,9 @@ export const validGear = (g: unknown): g is Gear =>
   (g.upgrade === undefined ||
     (number(g.upgrade, 10) && Number.isInteger(g.upgrade))) &&
   (g.locked === undefined || typeof g.locked === "boolean") &&
-  ["common", "uncommon", "rare", "epic", "legendary"].includes(g.rarity);
+  ["common", "uncommon", "rare", "epic", "legendary", "transcendent"].includes(
+    g.rarity,
+  );
 export function validBattle(b: unknown): b is BattleSave {
   if (!obj(b)) return false;
   for (const key of [

@@ -8,7 +8,7 @@ export class SpaceCombat {
   pattern = 0;
   timer = 2;
   core = 0;
-  private coreDelay=0;
+  private coreDelay = 0;
   phase = 1;
   constructor(private w: World) {}
   start() {
@@ -70,7 +70,7 @@ export class SpaceCombat {
       return false;
     if (e.hp <= 0) {
       e.timer -= dt;
-      if (e.timer <= 0)
+      if (e.timer <= 0 && !e.noLoot)
         Object.assign(
           e,
           createEnemy(
@@ -194,7 +194,8 @@ export class SpaceCombat {
           1,
           w.combat.loot.gear("epic"),
         );
-        if(!w.battle.titles.includes("사막의 개척자"))w.battle.titles.push("사막의 개척자");
+        if (!w.battle.titles.includes("사막의 개척자"))
+          w.battle.titles.push("사막의 개척자");
         w.toast("칭호 획득 · 사막의 개척자");
       }
       w.addXp(first ? 1800 : 500);
@@ -205,7 +206,10 @@ export class SpaceCombat {
     w.player.x = Math.max(3650, w.player.x);
     e.flash = Math.max(0, e.flash - dt);
     this.core = Math.max(0, this.core - dt);
-    if(this.coreDelay>0){this.coreDelay-=dt;if(this.coreDelay<=0)this.core=2;}
+    if (this.coreDelay > 0) {
+      this.coreDelay -= dt;
+      if (this.coreDelay <= 0) this.core = 2;
+    }
     this.phase = e.hp / e.maxHp > 0.7 ? 1 : e.hp / e.maxHp > 0.35 ? 2 : 3;
     this.timer -= dt;
     if (this.timer > 0) return;
@@ -247,7 +251,7 @@ export class SpaceCombat {
       w.enemies.push(
         createEnemy("sandCrawler", 4100, 780, 9000 + this.pattern),
       );
-    this.coreDelay=n===12?2.6:2;
+    this.coreDelay = n === 12 ? 2.6 : 2;
     this.timer = this.phase === 3 ? 4.5 : 5.5;
   }
 }

@@ -1,3 +1,4 @@
+import type { OmegaRegion } from "../ancient/catalog";
 import {
   extremeIds,
   extremePlanets,
@@ -6,9 +7,10 @@ import {
 } from "../extreme/catalog";
 import type { Cost, EnvGearId, Recipe } from "../survival/catalog";
 import type { ItemId } from "../data/content";
-export type PlanetId = "eden" | "ares" | ExtremePlanet;
-export const planetIds: PlanetId[] = ["eden", "ares", ...extremeIds];
+export type PlanetId = "eden" | "ares" | "omega" | ExtremePlanet;
+export const planetIds: PlanetId[] = ["eden", "ares", ...extremeIds, "omega"];
 export type SpaceRegion =
+  | OmegaRegion
   | ExtremeRegion
   | "ship"
   | "aresLanding"
@@ -383,8 +385,8 @@ export const starPlanets = [
     radius: 22,
     orbit: 580,
     level: "90–100",
-    type: "미확인 신호",
-    hazard: "항법 데이터 부족 · 후속 콘텐츠",
+    type: "고대 중앙 제어 세계",
+    hazard: "고대 방사선 · 양자 간섭 · GENESIS 인증 필요",
     available: false,
   },
 ] as const;
@@ -421,7 +423,9 @@ export const aresDeposits = [
   seconds: number;
 }[];
 export const planetForRegion = (region: string): PlanetId =>
-  extremeIds.find((id) => region.startsWith(id)) ??
+  (region.startsWith("omega")
+    ? "omega"
+    : extremeIds.find((id) => region.startsWith(id))) ??
   (region.startsWith("ares") ? "ares" : "eden");
 export const baseForPlanet = (planet: PlanetId) =>
   planet === "eden"
@@ -531,7 +535,9 @@ export const spaceQuests = quests.map(([name, story, goals], i) => ({
 
 export const navigablePlanets = starPlanets.map((p) => ({
   ...p,
-  available: extremePlanets[p.id as ExtremePlanet]?.available ?? p.available,
+  available:
+    p.id === "omega" ||
+    (extremePlanets[p.id as ExtremePlanet]?.available ?? p.available),
   hazard: extremePlanets[p.id as ExtremePlanet]?.available
     ? "극한 환경 · 전용 탐험복 필요"
     : p.hazard,

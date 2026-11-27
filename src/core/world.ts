@@ -1,3 +1,5 @@
+import { AncientSystem } from "../ancient/AncientSystem";
+import { ancientDeposits } from "../ancient/regions";
 import { ClassSystem } from "../classes/ClassSystem";
 import { ExtremeSystem } from "../extreme/ExtremeSystem";
 import { extremeDeposits } from "../extreme/regions";
@@ -88,6 +90,7 @@ export class World {
   space = new SpaceSystem(this);
   extreme = new ExtremeSystem(this);
   classes = new ClassSystem(this);
+  omega = new AncientSystem(this);
   get planetId() {
     return this.space.planet;
   }
@@ -98,6 +101,7 @@ export class World {
     return this.region === this.baseRegion;
   }
   get deposits() {
+    if (this.planetId === "omega") return ancientDeposits;
     return extremeIds.includes(this.planetId as ExtremePlanet)
       ? extremeDeposits(this.planetId)
       : this.planetId === "ares"
@@ -106,6 +110,7 @@ export class World {
   }
   get levelCap() {
     return Math.max(
+      this.omega.state.visited ? 100 : 0,
       this.space.state.launched ? 30 : 15,
       ...extremeIds
         .filter((id) => this.space.state.planets[id])
@@ -130,7 +135,7 @@ export class World {
       gear?.template.includes("_mk")
     )
       stats.attack *= 1.05;
-    return this.classes.applyStats(stats);
+    return this.omega.applyStats(this.classes.applyStats(stats));
   }
   region: RegionId = "crash";
   progress: Progress = newProgress();
@@ -171,6 +176,7 @@ export class World {
   private moved = false;
   constructor(save?: SaveData) {
     if (save) {
+      if (save.ancient) this.omega.state = structuredClone(save.ancient);
       if (save.space) this.space.state = structuredClone(save.space);
       this.extreme.initialize(save.extreme);
       this.colony.state = structuredClone(save.colony);
@@ -223,6 +229,7 @@ export class World {
       platforms: [
         ...source.platforms,
         ...this.extreme.combat.platforms,
+        ...this.omega.combat.platforms,
         ...this.extreme.physics.extraPlatforms,
       ],
     };
@@ -302,7 +309,16 @@ export class World {
   }
   addXp(amount: number) {
     const p = this.player;
-    if (p.level >= this.levelCap) return;
+    if (p.level >= this.levelCap) {
+      if (p.level === 100 && this.classes.state.classId) {
+        const id = this.classes.state.classId;
+        this.classes.state.mastery[id] = Math.min(
+          4000,
+          (this.classes.state.mastery[id] ?? 0) + Math.floor(amount / 50),
+        );
+      }
+      return;
+    }
     p.xp += amount;
     while (p.level < this.levelCap && p.xp >= xpRequired(p.level)) {
       p.xp -= xpRequired(p.level);
@@ -361,6 +377,8 @@ export class World {
     if (p.invulnerable > 0 || this.dead > 0 || this.combat.training) return;
     const actual = this.combat.receive(amount, element, fromX !== p.x);
     this.mining = null;
+    if (this.omega.endgame.original)
+      this.omega.endgame.damage += Math.min(p.hp, actual);
     p.hp = Math.max(0, p.hp - actual);
     p.invulnerable = 1.1;
     p.vx =
@@ -408,6 +426,7 @@ export class World {
     this.survival.sentinel.abort();
     this.space.combat.abort();
     this.extreme.combat.abort();
+    this.omega.combat.abort();
     this.survival.environment.grace = 8;
     this.region = id;
     const p = this.player;
@@ -513,6 +532,7 @@ export class World {
       return;
     }
     const l = target.landmark;
+    if (this.omega.interact(l)) return;
     if (this.extreme.interact(l)) return;
     if (this.space.interact(l)) return;
     if (this.survival.interact(l)) return;
@@ -611,6 +631,7 @@ export class World {
   }
   update(dt: number, input: InputFrame) {
     dt = Math.min(dt, 0.1);
+    if (this.omega.endgame.update(dt, input)) return;
     this.time += dt;
     this.colony.tick(dt);
     this.survival.production.tick(dt);
@@ -626,6 +647,7 @@ export class World {
       this.effects(dt);
       return;
     }
+    if (this.omega.update(dt, input)) return;
     this.combat.tickEffects(dt);
     if (this.combat.boss.intro > 0) {
       this.combat.boss.update(dt);
@@ -787,11 +809,14 @@ export class World {
     this.texts = this.texts.filter((t) => t.life > 0);
   }
   snapshot(settings: Settings): SaveData {
+    if (this.omega.endgame.original)
+      return structuredClone(this.omega.endgame.original);
     if (this.classes.trialReturn)
       return structuredClone(this.classes.trialReturn);
     this.classes.sync();
     return {
-      version: 7,
+      version: 8,
+      ancient: structuredClone(this.omega.state),
       classes: structuredClone(this.classes.state),
       extreme: structuredClone(this.extreme.state),
       space: this.space.snapshot(),

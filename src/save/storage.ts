@@ -1,3 +1,4 @@
+import { newAncient, validAncient } from "./ancient-schema";
 import { newClass } from "../classes/types";
 import { classes } from "../classes/catalog";
 import { validClass } from "./class-schema";
@@ -78,13 +79,19 @@ export function parseSave(raw: string | null): SaveData | null {
     const s = JSON.parse(raw);
     if (
       !object(s) ||
-      ![1, 2, 3, 4, 5, 6, 7].includes(Number(s.version)) ||
+      ![1, 2, 3, 4, 5, 6, 7, 8].includes(Number(s.version)) ||
       !regionOrder.includes(s.region as never) ||
       !finite(s.savedAt, 0, 1e15) ||
       !finite(
         s.level,
         1,
-        Number(s.version) >= 6 ? 90 : s.version === 5 ? 30 : 15,
+        Number(s.version) >= 8
+          ? 100
+          : Number(s.version) >= 6
+            ? 90
+            : s.version === 5
+              ? 30
+              : 15,
       ) ||
       !Number.isInteger(s.level)
     )
@@ -211,7 +218,10 @@ export function parseSave(raw: string | null): SaveData | null {
       s.version = 6;
     }
     if (!validExtreme(s.extreme)) return null;
-    s.version = 7;
+    if (Number(s.version) < 8) s.ancient = newAncient();
+    if (!validAncient(s.ancient)) return null;
+    if (String(s.region).startsWith("omega") && !s.ancient.visited) return null;
+    s.version = 8;
     return s as unknown as SaveData;
   } catch {
     return null;
@@ -253,7 +263,7 @@ export class SaveStore {
       if (previous) {
         try {
           if (
-            [2, 3, 4, 5, 6].includes(JSON.parse(previous).version) &&
+            [2, 3, 4, 5, 6, 7].includes(JSON.parse(previous).version) &&
             !this.storage.getItem(
               SAVE_KEY + ".backup.v" + JSON.parse(previous).version,
             )

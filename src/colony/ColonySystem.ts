@@ -89,7 +89,12 @@ export class ColonySystem {
           .filter(
             (b) =>
               b.remaining <= 0 &&
-              ["warehouse", "largeWarehouse", "aquaLogistics"].includes(b.kind),
+              [
+                "warehouse",
+                "largeWarehouse",
+                "aquaLogistics",
+                "aeternumArchive",
+              ].includes(b.kind),
           )
           .reduce(
             (n, b) =>
@@ -373,8 +378,12 @@ export class ColonySystem {
       refund[k as ItemId] = (refund[k as ItemId] ?? 0) + n!;
     const cap =
       this.capacity -
-      (["warehouse", "largeWarehouse", "aquaLogistics"].includes(b.kind) &&
-      b.remaining <= 0
+      ([
+        "warehouse",
+        "largeWarehouse",
+        "aquaLogistics",
+        "aeternumArchive",
+      ].includes(b.kind) && b.remaining <= 0
         ? (definition(b.kind).capacity ?? 0) * (b.level - (b.legacy ? 1 : 0))
         : 0);
     if (
@@ -448,7 +457,12 @@ export class ColonySystem {
     const kind = f === "research" ? "lab" : f;
     return this.state.buildings.some(
       (b) =>
-        (b.kind === kind || (kind === "lab" && b.kind === "quantumLab")) &&
+        (b.kind === kind ||
+          (kind === "lab" &&
+            ["quantumLab", "ancientResearch", "genesisNetwork"].includes(
+              b.kind,
+            )) ||
+          (kind === "workbench" && b.kind === "relicFabricator")) &&
         this.statuses.get(b.id)?.powered,
     );
   }
@@ -460,7 +474,12 @@ export class ColonySystem {
       ...this.state.buildings
         .filter(
           (b) =>
-            (b.kind === kind || (kind === "lab" && b.kind === "quantumLab")) &&
+            (b.kind === kind ||
+              (kind === "lab" &&
+                ["quantumLab", "ancientResearch", "genesisNetwork"].includes(
+                  b.kind,
+                )) ||
+              (kind === "workbench" && b.kind === "relicFabricator")) &&
             this.statuses.get(b.id)?.powered,
         )
         .map((b) => (b.kind === "quantumLab" ? 1.5 : 1) + (b.level - 1) * 0.3),
@@ -615,7 +634,12 @@ export class ColonySystem {
             output *= 0.6;
         } else {
           if (b.fuel <= 0 && dt > 0) {
-            const item = b.kind === "crystalGen" ? "crystal" : "denseCell";
+            const item =
+              b.kind === "quantumReactor"
+                ? "quantumStableCell"
+                : b.kind === "crystalGen"
+                  ? "crystal"
+                  : "denseCell";
             if (this.takeWarehouse({ [item]: 1 }))
               b.fuel =
                 b.kind === "crystalGen"
@@ -698,7 +722,12 @@ export class ColonySystem {
     const warehouses = all.filter(
         (b) =>
           alive(b) &&
-          ["warehouse", "largeWarehouse", "aquaLogistics"].includes(b.kind),
+          [
+            "warehouse",
+            "largeWarehouse",
+            "aquaLogistics",
+            "aeternumArchive",
+          ].includes(b.kind),
       ),
       global = all.some(
         (b) => b.kind === "logistics" && this.statuses.get(b.id)?.powered,

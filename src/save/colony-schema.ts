@@ -26,7 +26,12 @@ export const savedColonyCapacity = (s: ColonySave) =>
         .filter(
           (b) =>
             b.remaining <= 0 &&
-            ["warehouse", "largeWarehouse", "aquaLogistics"].includes(b.kind),
+            [
+              "warehouse",
+              "largeWarehouse",
+              "aquaLogistics",
+              "aeternumArchive",
+            ].includes(b.kind),
         )
         .reduce(
           (n, b) =>

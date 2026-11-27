@@ -1,3 +1,5 @@
+import { beginChallenge, finishChallenge } from "./ancient/Endgame";
+import { ancientAction } from "./ui/ancient-ui";
 import { classAction } from "./ui/class-ui";
 import { beginTrial, finishTrial, beginRematch } from "./classes/TrainingArena";
 import type { ClassId } from "./classes/catalog";
@@ -243,6 +245,40 @@ ui.action = (action, value) => {
     save();
     return;
   }
+  if (world && action === "an-run") {
+    const next = beginChallenge(world, value ?? "");
+    if (next) {
+      world = next;
+      closeModal();
+      input.clear();
+    }
+    return;
+  }
+  if (world && action === "an-exit") {
+    const next = finishChallenge(world);
+    if (next) {
+      world = next;
+      openModal("ancient");
+      save();
+    }
+    return;
+  }
+  if (world && action === "an-next") {
+    world.omega.endgame.next();
+    closeModal();
+    return;
+  }
+  if (world && ancientAction(world, action, value)) {
+    if (
+      world.omega.state.cinematic ||
+      action === "an-skip" ||
+      action === "an-boss"
+    )
+      closeModal();
+    else ui.open("ancient", world, settings);
+    save();
+    return;
+  }
   if (world && extremeAction(world, action, value)) {
     ui.open("space", world, settings);
     return;
@@ -263,6 +299,7 @@ ui.action = (action, value) => {
       "pause",
       "character",
       "skills",
+      "ancient",
     ].includes(action)
   ) {
     if (
@@ -665,7 +702,8 @@ class ExpeditionScene extends Phaser.Scene {
       }
       for (const event of world.events.splice(0)) {
         if (event.type === "facility") {
-          if (event.text === "space") openModal("space");
+          if (event.text === "ancient") openModal("ancient");
+          else if (event.text === "space") openModal("space");
           else if (event.text === "colony") openModal("colony");
           else {
             ui.hubTab = facilityTab(event.text);
@@ -680,15 +718,18 @@ class ExpeditionScene extends Phaser.Scene {
           openModal("ending");
         }
       }
+      if (world.omega.state.cinematic && ui.modal) closeModal();
       audio.planet(world.planetId);
       audio.region(
-        world.extreme.combat.boss
-          ? world.extreme.combat.boss.kind
-          : world.space.combat.boss
-            ? "colossus"
-            : world.combat.boss.active || world.survival.sentinel.active
-              ? "boss" + world.combat.boss.phase
-              : world.region,
+        world.omega.combat.boss
+          ? "genesis" + world.omega.combat.phase
+          : world.extreme.combat.boss
+            ? world.extreme.combat.boss.kind
+            : world.space.combat.boss
+              ? "colossus"
+              : world.combat.boss.active || world.survival.sentinel.active
+                ? "boss" + world.combat.boss.phase
+                : world.region,
       );
       if (world.colony.buildMode) builderArt(c, world);
       else art.world(c, world, settings.effects === "low");

@@ -101,7 +101,7 @@ describe("Path of the Explorer", () => {
     legacy.version = 6;
     delete legacy.classes;
     const migrated = parseSave(JSON.stringify(legacy))!;
-    expect(migrated.version).toBe(7);
+    expect(migrated.version).toBe(8);
     expect(migrated.classes?.granted).toBe(81);
     for (const key of [
       "battle",

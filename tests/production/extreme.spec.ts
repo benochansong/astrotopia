@@ -76,7 +76,7 @@ test("production HORIZON travels to AQUARIA and LUNARIS, saves and restores with
   const saved = await page.evaluate(() =>
     JSON.parse(localStorage.getItem("astrotopia.save.v1")!),
   );
-  expect(saved.version).toBe(7);
+  expect(saved.version).toBe(8);
   expect(saved.space.location).toBe("lunaris");
   expect(saved.space.fuel).toBe(25);
   expect(saved.space.planets.aquaria).toBeTruthy();

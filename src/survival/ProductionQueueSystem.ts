@@ -44,7 +44,11 @@ export class ProductionQueueSystem {
       !w.colony.state.buildings.some(
         (b) =>
           (b.kind === (facility === "research" ? "lab" : facility) ||
-            (facility === "research" && b.kind === "quantumLab")) &&
+            (facility === "research" &&
+              ["quantumLab", "ancientResearch", "genesisNetwork"].includes(
+                b.kind,
+              )) ||
+            (facility === "workbench" && b.kind === "relicFabricator")) &&
           b.remaining <= 0,
       )
     )
@@ -223,7 +227,21 @@ export class ProductionQueueSystem {
     } else {
       if (product?.kind === "gear")
         for (let i = 0; i < j.quantity; i++) {
-          const g = w.combat.loot.gear("uncommon", product.id);
+          const g = w.combat.loot.gear(
+            product.id.startsWith("omega_") ||
+              [
+                "genesisBlaster",
+                "eternityBlade",
+                "omegaCannon",
+                "quantumDestroyer",
+                "aeternumStaff",
+                "nexusCommander",
+                "voidHammer",
+              ].includes(product.id)
+              ? "legendary"
+              : "uncommon",
+            product.id,
+          );
           w.battle.gear.push(g);
           const weapon = gearTemplates[g.template].weapon;
           if (weapon && !w.battle.ownedWeapons.includes(weapon))

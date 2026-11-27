@@ -73,7 +73,7 @@ it("saves FROSTIA and previous colonies, rejects malformed extreme state and mig
   const old: any = new World().snapshot(defaultSettings());
   old.version = 5;
   delete old.extreme;
-  expect(parseSave(JSON.stringify(old))?.version).toBe(7);
+  expect(parseSave(JSON.stringify(old))?.version).toBe(8);
 });
 it("Leviathan phases create telegraphs, terrain, exclusive first navigation reward and persist the kill", () => {
   const w = frost();

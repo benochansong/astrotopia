@@ -14,7 +14,17 @@ export class LootSystem {
     const candidates = Object.keys(gearTemplates).filter(
       (id) =>
         id !== "titan" &&
-        (!id.startsWith("class_") ||
+        ((!id.startsWith("omega_") &&
+          ![
+            "genesisBlaster",
+            "eternityBlade",
+            "omegaCannon",
+            "quantumDestroyer",
+            "aeternumStaff",
+            "nexusCommander",
+            "voidHammer",
+          ].includes(id) &&
+          !id.startsWith("class_")) ||
           (this.w.classes.state.tier >= 2 &&
             id.startsWith("class_" + this.w.classes.state.classId + "_"))) &&
         !id.includes("_mk") &&

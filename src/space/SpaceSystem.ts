@@ -42,6 +42,7 @@ export class SpaceSystem {
       : planetForRegion(this.w.region);
   }
   get gravity() {
+    if (this.planet === "omega") return this.w.omega.gravity;
     return (
       extremePlanets[this.planet as ExtremePlanet]?.gravity ??
       (this.planet === "ares" ? 0.65 : 0.9)
@@ -216,16 +217,19 @@ export class SpaceSystem {
   }
   costFor(to: PlanetId) {
     const base =
-      (to === "eden" && this.state.location === "ares") ||
-      (to === "ares" && this.state.location === "eden")
-        ? 15
-        : (to === "frostia" && this.state.location === "eden") ||
-            (to === "eden" && this.state.location === "frostia")
-          ? 35
-          : Math.max(
-              extremePlanets[to as ExtremePlanet]?.fuel ?? 15,
-              extremePlanets[this.state.location as ExtremePlanet]?.fuel ?? 15,
-            );
+      to === "omega" || this.state.location === "omega"
+        ? 50
+        : (to === "eden" && this.state.location === "ares") ||
+            (to === "ares" && this.state.location === "eden")
+          ? 15
+          : (to === "frostia" && this.state.location === "eden") ||
+              (to === "eden" && this.state.location === "frostia")
+            ? 35
+            : Math.max(
+                extremePlanets[to as ExtremePlanet]?.fuel ?? 15,
+                extremePlanets[this.state.location as ExtremePlanet]?.fuel ??
+                  15,
+              );
     return Math.ceil(
       base *
         (this.state.upgrades.includes("propulsion") ? 0.8 : 1) *
@@ -239,6 +243,10 @@ export class SpaceSystem {
     );
   }
   reason(to: PlanetId, ascent = false) {
+    if (to === "omega") {
+      const why = this.w.omega.entryReason();
+      if (why) return why;
+    }
     const p = extremePlanets[to as ExtremePlanet];
     if (p) {
       if (!p.available) return "후속 항해 준비 중";
@@ -306,6 +314,7 @@ export class SpaceSystem {
     } else {
       this.switchPlanet(trip.to);
       this.once("land_" + trip.to);
+      if (trip.to === "omega") this.w.omega.arrive();
       if (trip.to === "ares") {
         this.once("desertPrepared");
         if (!this.state.emergencyClaimed) {
@@ -419,11 +428,12 @@ export class SpaceSystem {
   emergencyFuel() {
     const w = this.w;
     if (!this.docked || this.state.trip) return false;
-    const cost = extremePlanets[this.planet as ExtremePlanet]
-      ? { [w.deposits[0].item]: 1, [w.deposits[1].item]: 1 }
-      : this.planet === "ares"
-        ? { desertCrystal: 1, redIron: 1 }
-        : { crystal: 1, copper: 1 };
+    const cost =
+      this.planet === "omega" || extremePlanets[this.planet as ExtremePlanet]
+        ? { [w.deposits[0].item]: 1, [w.deposits[1].item]: 1 }
+        : this.planet === "ares"
+          ? { desertCrystal: 1, redIron: 1 }
+          : { crystal: 1, copper: 1 };
     if (this.state.fuel > 95 || !w.survival.storage.spend(cost))
       return this.fail("연료 공간 또는 현지 광물 부족");
     this.state.fuel += 5;

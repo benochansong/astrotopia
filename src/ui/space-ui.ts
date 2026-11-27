@@ -31,7 +31,7 @@ export function spacePanel(w: World) {
   const s = w.space,
     state = s.state;
   const nav =
-    '<nav class="colony-controls">' +
+    '<nav class="colony-controls"><button data-action="ancient">ECHO · 고대 기록</button>' +
     [
       ["ship", "우주선"],
       ["map", "항성계 지도"],
@@ -175,7 +175,7 @@ export function spacePanel(w: World) {
             "</h3><p>Lv." +
             p.level +
             " · 편도 " +
-            (p.id === "omega" ? "?" : s.costFor(p.id as PlanetId)) +
+            s.costFor(p.id as PlanetId) +
             " 연료" +
             " · " +
             p.hazard +

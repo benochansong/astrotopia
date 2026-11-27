@@ -28,7 +28,11 @@ export class ScannerSystem {
   }
   readings() {
     const w = this.w,
-      r = w.survival.state.technologies.includes("rareScan") ? 950 : 600;
+      r = w.survival.state.equipped.includes("genesisScanner")
+        ? 1400
+        : w.survival.state.technologies.includes("rareScan")
+          ? 950
+          : 600;
     const nearby = w.map.resources.filter(
       (n) => Math.abs(n.x - w.player.x) < r && !w.cooldowns[n.id],
     );

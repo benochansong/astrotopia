@@ -146,7 +146,7 @@ export class ExtremeCombat {
       w = this.w;
     if (e.hp <= 0) {
       e.timer -= dt;
-      if (e.timer <= 0)
+      if (e.timer <= 0 && !e.noLoot)
         Object.assign(
           e,
           createEnemy(

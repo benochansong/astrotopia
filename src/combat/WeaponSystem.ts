@@ -30,6 +30,41 @@ export class WeaponSystem {
       ),
       base = weapons[this.id],
       id = g?.template;
+    if (id === "genesisBlaster")
+      return { ...base, power: base.power * 1.25, energy: 4, pierce: true };
+    if (id === "eternityBlade")
+      return {
+        ...base,
+        power: base.power * (1.1 + this.comboStep * 0.12),
+        speed: base.speed * 0.85,
+      };
+    if (id === "omegaCannon")
+      return { ...base, power: base.power * 1.4, range: 900, cooldown: 9 };
+    if (id === "quantumDestroyer")
+      return {
+        ...base,
+        element: "gravity" as const,
+        knockback: 400,
+        power: base.power * 1.2,
+      };
+    if (id === "aeternumStaff")
+      return {
+        ...base,
+        element: (["cryo", "electric", "plasma"] as const)[
+          Math.floor(w.time / 3) % 3
+        ],
+        power: base.power * 1.25,
+        projectileSpeed: 500,
+      };
+    if (id === "nexusCommander")
+      return { ...base, power: base.power * 1.25, range: 1050, pierce: true };
+    if (id === "voidHammer")
+      return {
+        ...base,
+        element: "gravity" as const,
+        power: base.power * 1.3,
+        knockback: 500,
+      };
     if (id === "hydroLance")
       return {
         ...base,

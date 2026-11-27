@@ -1,3 +1,4 @@
+import { ancientPanel, ancientHud } from "./ancient-ui";
 import {
   defaultBindings,
   bindingCodes,
@@ -38,6 +39,7 @@ import {
 } from "./battle-ui";
 import { gearTemplates, rarities } from "../data/battle";
 export type Modal =
+  | "ancient"
   | "space"
   | "colony"
   | "hub"
@@ -124,7 +126,7 @@ export class Interface {
     this.hud.hidden = true;
     this.screen.hidden = false;
     this.close();
-    this.screen.innerHTML = `<section class="title-screen"><div class="brand-top"><span class="orbit-mark">✧</span> INTERSTELLAR EXPLORATION PROGRAM <span class="phase-tag">PHASE 07</span></div><div class="title-copy"><p class="eyebrow">PATH OF THE EXPLORER</p><h1>ASTRO<span>TOPIA</span></h1><p class="tagline">CHOOSE YOUR PATH. DEFINE YOUR LEGACY.</p><p class="title-description">낯선 별에 남기는, 당신의 첫 번째 발자국.<br>아무도 기록하지 않은 세계가 기다립니다.</p></div><nav class="main-menu" aria-label="메인 메뉴"><button class="primary start" data-action="new"><span class="button-glyph">✦</span>${ko.newGame}<span class="button-end">NEW EXPEDITION</span></button><button class="continue" data-action="continue" ${canContinue ? "" : "disabled"}><span class="button-glyph">⌁</span>${ko.continue}<span class="button-end">${canContinue ? "RESUME EXPEDITION" : "저장된 탐험 없음"}</span></button><div class="menu-links"><button data-action="settings">${ko.settings}</button><span></span><button data-action="controls">${ko.controls}</button><span></span><button data-action="credits">${ko.credits}</button></div></nav><div class="planet-label"><span class="crosshair">+</span><p>DESTINATION 001</p><h2>EDEN</h2><div>미탐사 생명체 행성</div><dl><dt>중력</dt><dd>0.9 G</dd><dt>대기</dt><dd>호흡 가능</dd></dl></div><footer class="title-footer"><span><i></i> EXPLORATION SYSTEMS ONLINE</span><span>2478 CE <b> / </b> PROJECT ASTROTOPIA</span><span>키보드 · PC 브라우저 권장</span></footer>${error ? `<p class="storage-error">${escape(error)}</p>` : ""}</section>`;
+    this.screen.innerHTML = `<section class="title-screen"><div class="brand-top"><span class="orbit-mark">✧</span> INTERSTELLAR EXPLORATION PROGRAM <span class="phase-tag">PHASE 08</span></div><div class="title-copy"><p class="eyebrow">ANCIENT SECRETS</p><h1>ASTRO<span>TOPIA</span></h1><p class="tagline">CHOOSE YOUR PATH. DEFINE YOUR LEGACY.</p><p class="title-description">낯선 별에 남기는, 당신의 첫 번째 발자국.<br>아무도 기록하지 않은 세계가 기다립니다.</p></div><nav class="main-menu" aria-label="메인 메뉴"><button class="primary start" data-action="new"><span class="button-glyph">✦</span>${ko.newGame}<span class="button-end">NEW EXPEDITION</span></button><button class="continue" data-action="continue" ${canContinue ? "" : "disabled"}><span class="button-glyph">⌁</span>${ko.continue}<span class="button-end">${canContinue ? "RESUME EXPEDITION" : "저장된 탐험 없음"}</span></button><div class="menu-links"><button data-action="settings">${ko.settings}</button><span></span><button data-action="controls">${ko.controls}</button><span></span><button data-action="credits">${ko.credits}</button></div></nav><div class="planet-label"><span class="crosshair">+</span><p>DESTINATION 001</p><h2>EDEN</h2><div>미탐사 생명체 행성</div><dl><dt>중력</dt><dd>0.9 G</dd><dt>대기</dt><dd>호흡 가능</dd></dl></div><footer class="title-footer"><span><i></i> EXPLORATION SYSTEMS ONLINE</span><span>2478 CE <b> / </b> PROJECT ASTROTOPIA</span><span>키보드 · PC 브라우저 권장</span></footer>${error ? `<p class="storage-error">${escape(error)}</p>` : ""}</section>`;
   }
   game() {
     this.screen.hidden = true;
@@ -225,7 +227,14 @@ export class Interface {
         "</small></div>"
       : "";
     const finalHtml =
-      html + battleHud(w) + survivalHud(w) + spaceHud + bossHud + eh + bh;
+      html +
+      ancientHud(w) +
+      battleHud(w) +
+      survivalHud(w) +
+      spaceHud +
+      bossHud +
+      eh +
+      bh;
     if (this.lastHud !== finalHtml) {
       this.hud.innerHTML = finalHtml;
       this.lastHud = finalHtml;
@@ -251,6 +260,11 @@ export class Interface {
       heading = "탐험 환경 설정";
       eyebrow = "SYSTEM CONFIGURATION";
       content = `<div class="settings-grid"><label for="music">배경음</label><input id="music" aria-label="배경음" type="range" min="0" max="1" step="0.05" value="${s.music}" data-setting="music"><label for="sfx">효과음</label><input id="sfx" aria-label="효과음" type="range" min="0" max="1" step="0.05" value="${s.sfx}" data-setting="sfx"><label for="effects">그래픽 효과</label><select id="effects" data-setting="effects"><option value="high" ${s.effects === "high" ? "selected" : ""}>높음</option><option value="low" ${s.effects === "low" ? "selected" : ""}>낮음 · 입자 및 전경 감소</option></select></div><button class="wide" data-action="fullscreen">전체 화면 전환</button><p class="muted">설정은 자동으로 이 브라우저에 저장됩니다.</p>`;
+    }
+    if (modal === "ancient" && w) {
+      heading = "ECHO · 고대 문명의 기록";
+      eyebrow = "ANCIENT SECRETS";
+      content = ancientPanel(w);
     }
     if (modal === "space" && w) {
       heading = "별들 사이의 집";
@@ -374,7 +388,7 @@ export class Interface {
       heading = "작은 발자국에서 시작된 세계";
       eyebrow = "PROJECT ASTROTOPIA";
       content =
-        '<p>기획 · ASTROTOPIA</p><p>게임 엔진 · Phaser 3<br>개발 · TypeScript / Vite<br>아트 · 자체 제작 절차적 벡터 그래픽<br>사운드 · Web Audio 합성</p><p class="muted">외부 상용 게임의 이미지, 캐릭터, 음악을 사용하지 않았습니다.<br>PATH OF THE EXPLORER · DEVELOPMENT PHASE 07</p>';
+        '<p>기획 · ASTROTOPIA</p><p>게임 엔진 · Phaser 3<br>개발 · TypeScript / Vite<br>아트 · 자체 제작 절차적 벡터 그래픽<br>사운드 · Web Audio 합성</p><p class="muted">외부 상용 게임의 이미지, 캐릭터, 음악을 사용하지 않았습니다.<br>ANCIENT SECRETS · DEVELOPMENT PHASE 08</p>';
     }
     if (modal === "confirm") {
       heading = "새로운 모험을 시작할까요?";
@@ -436,7 +450,7 @@ export class Interface {
     if (modal === "pause" && w?.survival.sentinel.active)
       content +=
         '<button data-action="sentinel-leave">파수꾼 전투 이탈</button>';
-    this.dialog.innerHTML = `<section class="modal ${modal === "space" || modal === "colony" || modal === "hub" || modal === "inventory" || modal === "map" || modal === "character" || modal === "skills" ? "large" : ""}" role="dialog" aria-modal="true" aria-labelledby="modal-heading"><button class="close" data-action="close" aria-label="닫기">×</button><p class="eyebrow">${eyebrow}</p><h2 id="modal-heading">${heading}</h2>${content}</section>`;
+    this.dialog.innerHTML = `<section class="modal ${modal === "ancient" || modal === "space" || modal === "colony" || modal === "hub" || modal === "inventory" || modal === "map" || modal === "character" || modal === "skills" ? "large" : ""}" role="dialog" aria-modal="true" aria-labelledby="modal-heading"><button class="close" data-action="close" aria-label="닫기">×</button><p class="eyebrow">${eyebrow}</p><h2 id="modal-heading">${heading}</h2>${content}</section>`;
     this.screen.inert = true;
     this.hud.inert = true;
     this.dialog

@@ -56,36 +56,39 @@ export class AudioSystem {
       this.context.currentTime,
       2,
     );
-    const root =
-      id === "leviathan"
-        ? 49
-        : id === "helios"
-          ? 32.7
-          : id === "emperor"
-            ? 43.65
-            : id === "archon"
-              ? 38.9
-              : id.startsWith("inferno")
-                ? 49
-                : id.startsWith("aquaria")
-                  ? 87.3
-                  : id.startsWith("lunaris")
-                    ? 73.4
-                    : id.startsWith("frostia")
-                      ? 98
-                      : id === "colossus"
-                        ? 36.7
-                        : id === "ship"
-                          ? 82.4
-                          : id.startsWith("ares")
-                            ? 55
-                            : id.startsWith("boss")
-                              ? 41.2 + Number(id.slice(4)) * 3
-                              : id === "valley"
-                                ? 73.416
-                                : id === "forest"
-                                  ? 58.27
-                                  : 65.406;
+    const root = id.startsWith("genesis")
+      ? 36.7 + Number(id.slice(7)) * 4
+      : id.startsWith("omega")
+        ? 61.74
+        : id === "leviathan"
+          ? 49
+          : id === "helios"
+            ? 32.7
+            : id === "emperor"
+              ? 43.65
+              : id === "archon"
+                ? 38.9
+                : id.startsWith("inferno")
+                  ? 49
+                  : id.startsWith("aquaria")
+                    ? 87.3
+                    : id.startsWith("lunaris")
+                      ? 73.4
+                      : id.startsWith("frostia")
+                        ? 98
+                        : id === "colossus"
+                          ? 36.7
+                          : id === "ship"
+                            ? 82.4
+                            : id.startsWith("ares")
+                              ? 55
+                              : id.startsWith("boss")
+                                ? 41.2 + Number(id.slice(4)) * 3
+                                : id === "valley"
+                                  ? 73.416
+                                  : id === "forest"
+                                    ? 58.27
+                                    : 65.406;
     this.voices.forEach((voice, i) =>
       voice.frequency.setTargetAtTime(
         root * [1, 1.5, 2, 2.52, 3][i],

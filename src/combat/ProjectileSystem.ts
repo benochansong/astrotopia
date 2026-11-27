@@ -60,8 +60,8 @@ export class ProjectileSystem {
         Math.ceil((Math.hypot(b.vx, b.vy ?? 0) * dt) / 12),
       );
       for (let i = 0; i < steps && b.active; i++) {
-        b.x += (b.vx * dt) / steps;
-        b.y += ((b.vy ?? 0) * dt) / steps;
+        b.x += (b.vx * dt * this.w.omega.localTime(b.x)) / steps;
+        b.y += ((b.vy ?? 0) * dt * this.w.omega.localTime(b.x)) / steps;
         b.life -= dt / steps;
         if (b.life <= 0) {
           if (b.blast) this.explode(b);

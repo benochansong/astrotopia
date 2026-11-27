@@ -48,6 +48,7 @@ export class EnemyAI {
     const w = this.w,
       p = w.player;
     for (const e of [...w.enemies]) {
+      if (w.omega.combat.enemy(e, dt)) continue;
       if (w.extreme.combat.enemy(e, dt)) continue;
       if (w.space.combat.enemy(e, dt)) continue;
       if (["colossus", "dummy", "sentinel", "conduit"].includes(e.kind))

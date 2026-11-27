@@ -1,3 +1,4 @@
+import { ancientItems } from "../src/ancient/catalog";
 import { extremeItems } from "../src/extreme/catalog";
 import { spaceItems } from "../src/space/catalog";
 import { describe, it, expect } from "vitest";
@@ -36,7 +37,10 @@ function setup() {
   w.player.y = 716;
   w.survival.state.researchPoints = 100;
   for (const id of Object.keys(items).filter(
-    (id) => !Object.hasOwn(spaceItems, id) && !Object.hasOwn(extremeItems, id),
+    (id) =>
+      !Object.hasOwn(spaceItems, id) &&
+      !Object.hasOwn(extremeItems, id) &&
+      !Object.hasOwn(ancientItems, id),
   ))
     w.survival.state.warehouse[id as ItemId] = 30;
   w.colony.state.technologies = Object.keys(colonyTech);
@@ -94,7 +98,7 @@ describe("colony construction and persistence", () => {
     old.version = 3;
     delete old.colony;
     const save = parseSave(JSON.stringify(old))!;
-    expect(save.version).toBe(7);
+    expect(save.version).toBe(8);
     const migrated = new World(save);
     expect(
       migrated.colony.state.buildings.filter((b) => b.legacy),

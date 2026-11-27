@@ -115,7 +115,7 @@ export function colonyPanel(w: World) {
   let body = "";
   const b = c.find(c.selected);
   if (colonyView.tab === "overview")
-    body = `<div class="colony-hero"><div><p class="eyebrow">FROM SURVIVOR TO PIONEER</p><h3>${escape(c.state.name)}</h3><p>시설 ${c.state.buildings.length} · 정착민 ${c.state.settlers.length}/10 · 로봇 ${c.state.robots.length}/20</p><p>Lv.2 채굴·연구·산소·포탑 → Lv.3 공장·자동화·결정 전력·거주 → Lv.4 의료·온실·분석·정착민 → Lv.5 코어 발전·우주항·항법·납품</p></div><div class="colony-orbit">⌬<span>SECTOR 01</span></div></div><div class="colony-controls">${btn("B · 건설 시작", "build")}${btn("개척 구역으로 이동", "travel")}${btn("현황 새로고침", "refresh")}${btn("비상 수동 정제 · 잔해 3 → 철괴 1", "emergency")}</div>${c.offlineReport ? `<p class="notice">${escape(c.offlineReport)}</p>` : ""}<p>20분 주기 · 낮 12분 / 밤 8분. 일시정지 메뉴에서는 시간이 멈춥니다.</p>`;
+    body = `<div class="colony-hero"><div><p class="eyebrow">FROM SURVIVOR TO PIONEER</p><h3>${escape(c.state.name)}</h3><p>시설 ${c.state.buildings.length} · 정착민 ${c.state.settlers.length}/10 · 로봇 ${c.state.robots.length}/20</p><p>Lv.2 채굴·연구·산소·포탑 → Lv.3 공장·자동화·결정 전력·거주 → Lv.4 의료·온실·분석·정착민 → Lv.5 코어 발전·우주항·항법·납품</p></div><div class="colony-orbit">⌬<span>SECTOR 01</span></div></div><div class="colony-controls"><button data-action="civilization">은하 문명 관제</button>${btn("B · 건설 시작", "build")}${btn("개척 구역으로 이동", "travel")}${btn("현황 새로고침", "refresh")}${btn("비상 수동 정제 · 잔해 3 → 철괴 1", "emergency")}</div>${c.offlineReport ? `<p class="notice">${escape(c.offlineReport)}</p>` : ""}<p>20분 주기 · 낮 12분 / 밤 8분. 일시정지 메뉴에서는 시간이 멈춥니다.</p>`;
   if (colonyView.tab === "energy")
     body = `<p>반경으로 연결된 전력망을 각각 계산합니다. 전력 부족 시 낮은 숫자 순위부터 공급합니다.</p>${table(
       ["전력망", "발전 / 수요 / 공급", "축전지", "시설 수"],

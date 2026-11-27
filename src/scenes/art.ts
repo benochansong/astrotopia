@@ -1,4 +1,9 @@
 import {
+  civilizationBackground,
+  civilizationTerrain,
+  civilizationStructures,
+} from "../civilization/art";
+import {
   ancientBackground,
   ancientTerrain,
   ancientEnemy,
@@ -1012,6 +1017,7 @@ export class Art {
   }
   world(c: CanvasRenderingContext2D, w: World, low = false) {
     if (
+      !civilizationBackground(c, w) &&
       !ancientBackground(c, w, low) &&
       !extremeBackground(c, w, low) &&
       !spaceBackground(c, w, low) &&
@@ -1027,11 +1033,17 @@ export class Art {
       -w.camera.x + (Math.random() - 0.5) * w.camera.shake * w.settings.shake,
       -w.camera.y + (Math.random() - 0.5) * w.camera.shake * w.settings.shake,
     );
-    if (!ancientTerrain(c, w) && !extremeTerrain(c, w) && !spaceTerrain(c, w))
+    if (
+      !civilizationTerrain(c, w) &&
+      !ancientTerrain(c, w) &&
+      !extremeTerrain(c, w) &&
+      !spaceTerrain(c, w)
+    )
       this.terrain(c, w);
-    this.landmarks(c, w);
+    if (w.region !== "station") this.landmarks(c, w);
     frontierStructures(c, w);
     drawColony(c, w);
+    civilizationStructures(c, w);
     drawCombat(c, w);
     drawTitan(c, w);
     for (const l of w.map.landmarks)

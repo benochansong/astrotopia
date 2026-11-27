@@ -1,3 +1,4 @@
+import { civilBuildings } from "../civilization/catalog";
 import type { Cost } from "../survival/catalog";
 export const GRID = 40,
   GROUND = 780,
@@ -87,6 +88,7 @@ const d = (
   ...extra,
 });
 export const buildings = {
+  ...civilBuildings,
   ancientResearch: d(
     "고대 연구 센터",
     "research",

@@ -83,7 +83,9 @@ export function finishTrial(trial: World): World | null {
   if (!save) return null;
   const t = trial.classes.trial,
     rematch = trial.classes.rematch;
-  const w = new World(save);
+  const restored = structuredClone(save);
+  if (restored.civilization) restored.civilization.lastClock = Date.now();
+  const w = new World(restored);
   w.classes.record("mentor");
   w.classes.record("trial");
   if (t && t.grade > 0 && t.elapsed <= 180 && !trial.dead) {

@@ -1,3 +1,4 @@
+import { industrialRecipes } from "../civilization/catalog";
 import type { World } from "../core/world";
 import { items, regions, type ItemId, type Platform } from "../data/content";
 import { recipes, type Cost, type Facility } from "../survival/catalog";
@@ -106,6 +107,9 @@ export class ColonySystem {
     );
   }
   get level() {
+    const city =
+      this.w.civilization?.cityLevel(this.w.space.state.location) ?? 0;
+    if (city >= 6) return city;
     const has = (kind: BuildingKind) =>
       this.state.buildings.some((b) => b.kind === kind && alive(b));
     if (
@@ -628,7 +632,7 @@ export class ColonySystem {
             )
               ? 1
               : 0;
-        } else if (["solar", "highSolar"].includes(b.kind)) {
+        } else if (["solar", "highSolar", "megaSolar"].includes(b.kind)) {
           output *= offline ? 0.6 : this.night ? 0 : 1;
           if (this.w.extreme.environment.weather.active && !ashProtected)
             output *= 0.6;
@@ -683,6 +687,7 @@ export class ColonySystem {
           ![
             "solar",
             "highSolar",
+            "megaSolar",
             "geothermalGen",
             "tidalGenerator",
             "cosmicSolar",
@@ -690,7 +695,11 @@ export class ColonySystem {
           b.fuel <= 0
         )
           this.statuses.get(b.id)!.reason = "발전 연료 부족";
-        if (["solar", "highSolar"].includes(b.kind) && this.night && !offline)
+        if (
+          ["solar", "highSolar", "megaSolar"].includes(b.kind) &&
+          this.night &&
+          !offline
+        )
           this.statuses.get(b.id)!.reason = "야간 · 발전 정지";
       }
       let balance = (generation - used) * dt;
@@ -796,19 +805,34 @@ export class ColonySystem {
         item: id,
         count: 3,
       }));
+    if (
+      ![
+        "refinery",
+        "magmaCooling",
+        "alloyFactory",
+        "factory",
+        "workbench",
+      ].includes(b.kind) &&
+      !Object.hasOwn(industrialRecipes, b.kind)
+    )
+      return [];
     return Object.entries(recipes)
       .filter(
         ([, r]) =>
           r.result.kind === "item" &&
-          (["refinery", "magmaCooling", "alloyFactory"].includes(b.kind)
-            ? r.facility === "refinery"
-            : b.kind === "factory"
-              ? ["electronics", "refine_alloy", "refine_denseCell"].includes(
-                  r.id,
-                )
-              : b.kind === "workbench"
-                ? ["medicalGel", "energyCell", "fieldData"].includes(r.id)
-                : false) &&
+          (Object.hasOwn(industrialRecipes, b.kind)
+            ? industrialRecipes[b.kind].includes(r.id) ||
+              (["megaRefinery", "alloyComplex"].includes(b.kind) &&
+                r.facility === "refinery")
+            : ["refinery", "magmaCooling", "alloyFactory"].includes(b.kind)
+              ? r.facility === "refinery"
+              : b.kind === "factory"
+                ? ["electronics", "refine_alloy", "refine_denseCell"].includes(
+                    r.id,
+                  )
+                : b.kind === "workbench"
+                  ? ["medicalGel", "energyCell", "fieldData"].includes(r.id)
+                  : false) &&
           (!r.tech || this.w.survival.state.technologies.includes(r.tech)),
       )
       .map(([id, r]) => ({
@@ -894,6 +918,7 @@ export class ColonySystem {
     const bonus =
       1 +
       this.w.classes.industryBonus +
+      this.w.civilization.industryBonus(this.w.space.state.location, b.kind) +
       (b.level - 1) * 0.3 +
       (this.state.technologies.includes("automation") ? 0.1 : 0) +
       this.state.settlers.filter(
@@ -1015,6 +1040,7 @@ export class ColonySystem {
         job.remaining -=
           step *
           (1 +
+            this.w.civilization.researchBonus(this.w.space.state.location) +
             this.state.settlers.filter(
               (s) =>
                 s.role === "scientist" &&

@@ -177,7 +177,7 @@ describe("Ancient Secrets", () => {
     old.version = 7;
     delete old.ancient;
     const migrated = parseSave(JSON.stringify(old));
-    expect(migrated?.version).toBe(8);
+    expect(migrated?.version).toBe(9);
     expect(migrated?.ancient?.ending).toBeNull();
     expect(migrated?.classes).toEqual(old.classes);
     const data = new Map([[SAVE_KEY, JSON.stringify(old)]]);

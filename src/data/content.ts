@@ -1,3 +1,5 @@
+import { stationRegion } from "../civilization/regions";
+import { civilItems, type CivilItem } from "../civilization/catalog";
 import {
   ancientItems,
   omegaRegionIds,
@@ -37,8 +39,9 @@ import {
 } from "../survival/regions";
 import type { Element, EliteAffix } from "../combat/types";
 export type RegionId =
-  SpaceRegion | FrontierRegion | "crash" | "forest" | "valley";
+  "station" | SpaceRegion | FrontierRegion | "crash" | "forest" | "valley";
 export type ItemId =
+  | CivilItem
   | AncientItem
   | ExtremeItem
   | SpaceItem
@@ -195,6 +198,7 @@ export const items: Record<
     icon: string;
   }
 > = {
+  ...civilItems,
   ...ancientItems,
   ...extremeItems,
   ...spaceItems,
@@ -477,6 +481,7 @@ const node = (
   count = 1,
 ): Resource => ({ id, item, x, y, count, respawn: 35 });
 export const regions: Record<RegionId, Region> = {
+  station: stationRegion,
   ...ancientRegions,
   ...extremeRegions,
   ...spaceRegions,
@@ -656,6 +661,7 @@ export const regionOrder: RegionId[] = [
   "aresDunes",
   "aresCanyon",
   "aresFoundry",
+  "station",
   ...omegaRegionIds,
   ...extremeRegionIds,
 ];

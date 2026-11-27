@@ -63,7 +63,7 @@ export class WeatherSystem {
   }
   update(dt: number) {
     const w = this.w;
-    if (w.region === "ship") return;
+    if (["ship", "station"].includes(w.region)) return;
     const before = this.clock;
     w.extreme.state.weather[w.planetId] = (before + dt) % 190;
     if (before < 130 && this.clock >= 130) {
@@ -82,8 +82,9 @@ export class PlanetEnvironmentSystem {
   }
   get sheltered() {
     const w = this.w;
+    if (w.civilization.protected) return true;
     return (
-      w.region === "ship" ||
+      ["ship", "station"].includes(w.region) ||
       (w.isColonyRegion && w.player.x < 650 && w.player.y < 850) ||
       w.space.protectedBy("radShieldStation") ||
       w.space.protectedBy("vacuumHabitat") ||
@@ -147,7 +148,7 @@ export class PlanetEnvironmentSystem {
     this.weather.update(dt);
     if (
       !extremeIds.includes(w.planetId as ExtremePlanet) ||
-      w.region === "ship"
+      ["ship", "station"].includes(w.region)
     ) {
       s.temperature = Math.max(0, s.temperature - dt * 8);
       return;

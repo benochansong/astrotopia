@@ -65,7 +65,8 @@ export interface Progress {
   checkpoint: { region: RegionId; x: number };
 }
 export interface SaveData {
-  version: 4 | 5 | 6 | 7 | 8;
+  version: 4 | 5 | 6 | 7 | 8 | 9;
+  civilization?: import("../civilization/types").CivilizationSave;
   ancient?: import("../ancient/types").AncientSave;
   classes?: import("../classes/types").ClassSave;
   extreme?: import("../extreme/types").ExtremeSave;

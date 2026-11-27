@@ -1,0 +1,13 @@
+{
+  "fps": 98.2624325943679,
+  "p95": 12.900000000372529,
+  "max": 17.90000000037253,
+  "frames": 492,
+  "elapsed": 5007,
+  "measurement": "actual game update calls, not display refresh callbacks",
+  "planets": 7,
+  "buildings": 500,
+  "ships": 30,
+  "routes": 50,
+  "population": 5000
+}

@@ -41,7 +41,7 @@ describe("Survival Protocol", () => {
     old.version = 2;
     delete old.survival;
     const s = parseSave(JSON.stringify(old))!;
-    expect(s.version).toBe(8);
+    expect(s.version).toBe(9);
     expect(s.progress.quest).toBe(10);
     expect(s.battle).toEqual(w.battle);
     expect(s.inventory.iron).toBe(10);
@@ -160,7 +160,7 @@ describe("Survival Protocol", () => {
     w.inventory.iron = 30;
     w.survival.refinery.start("refine_ironBar", 10);
     const save = w.snapshot(defaultSettings());
-    save.survival.lastClock -= 60000;
+    save.civilization!.lastClock -= 60000;
     const w2 = new World(parseSave(JSON.stringify(save))!);
     expect(w2.survival.state.jobs[0].state).toBe("ready");
     const id = w2.survival.state.jobs[0].id;

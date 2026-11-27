@@ -1,3 +1,4 @@
+import { civilRecipes, civilTech } from "../civilization/catalog";
 import { ancientEnv, ancientRecipes, ancientTech } from "../ancient/catalog";
 import {
   extremeGear,
@@ -762,3 +763,6 @@ for (const t of extremeTech) technologies[t.id] = t;
 
 for (const r of ancientRecipes) recipes[r.id] = r;
 for (const t of ancientTech) technologies[t.id] = t;
+
+for (const r of civilRecipes) recipes[r.id] = r;
+for (const t of civilTech) technologies[t.id] = t;

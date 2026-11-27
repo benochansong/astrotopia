@@ -1,3 +1,4 @@
+import { CivilizationSystem } from "../civilization/CivilizationSystem";
 import { AncientSystem } from "../ancient/AncientSystem";
 import { ancientDeposits } from "../ancient/regions";
 import { ClassSystem } from "../classes/ClassSystem";
@@ -91,6 +92,7 @@ export class World {
   extreme = new ExtremeSystem(this);
   classes = new ClassSystem(this);
   omega = new AncientSystem(this);
+  civilization = new CivilizationSystem(this);
   get planetId() {
     return this.space.planet;
   }
@@ -209,10 +211,12 @@ export class World {
     this.spawnEnemies();
     this.combat.unlock();
     this.colony.initialize();
-    this.colony.offline();
     this.space.initialize(save?.space);
 
-    if (!this.colony.state.enabled) this.survival.production.offline();
+    this.civilization.initialize(
+      save?.civilization,
+      save?.savedAt ?? Date.now(),
+    );
     if (!["crash", "forest", "valley"].includes(this.region)) {
       this.player.x = this.map.spawn;
       this.player.y = 716;
@@ -532,6 +536,10 @@ export class World {
       return;
     }
     const l = target.landmark;
+    if (l.id.startsWith("nexus-zone-")) {
+      this.emit("facility", "civilization");
+      return;
+    }
     if (this.omega.interact(l)) return;
     if (this.extreme.interact(l)) return;
     if (this.space.interact(l)) return;
@@ -636,6 +644,7 @@ export class World {
     this.colony.tick(dt);
     this.survival.production.tick(dt);
     this.space.tick(dt, input);
+    this.civilization.tick(dt);
     if (this.space.state.trip) return;
     this.transition = Math.max(0, this.transition - dt);
     this.regionNotice = Math.max(0, this.regionNotice - dt);
@@ -815,7 +824,8 @@ export class World {
       return structuredClone(this.classes.trialReturn);
     this.classes.sync();
     return {
-      version: 8,
+      version: 9,
+      civilization: structuredClone(this.civilization.state),
       ancient: structuredClone(this.omega.state),
       classes: structuredClone(this.classes.state),
       extreme: structuredClone(this.extreme.state),

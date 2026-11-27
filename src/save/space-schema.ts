@@ -23,11 +23,13 @@ export function validSpace(
   global: SurvivalSave,
   region: string,
   horizon = false,
+  odyssey = false,
 ): s is SpaceSave {
   if (
     !obj(s) ||
     !planetIds.includes(s.location) ||
-    (region !== "ship" && planetForRegion(region) !== s.location) ||
+    (!["ship", "station"].includes(region) &&
+      planetForRegion(region) !== s.location) ||
     !list(s.repaired, shipSystems) ||
     !list(s.upgrades, upgrades) ||
     !num(s.fuel, 100) ||
@@ -46,10 +48,12 @@ export function validSpace(
     !obj(s.cargo) ||
     Object.entries(s.cargo).some(
       ([id, n]) =>
-        !Object.hasOwn(items, id) || !num(n, 31680) || !Number.isInteger(n),
+        !Object.hasOwn(items, id) ||
+        !num(n, odyssey ? 59400 : 31680) ||
+        !Number.isInteger(n),
     ) ||
     occupiedSlots(s.cargo) >
-      (horizon ? 320 : s.upgrades.includes("cargo") ? 160 : 80)
+      (odyssey ? 600 : horizon ? 320 : s.upgrades.includes("cargo") ? 160 : 80)
   )
     return false;
   if (

@@ -147,9 +147,10 @@ export class AncientSystem {
   get safe() {
     return (
       this.sheltered ||
+      this.w.civilization.protected ||
       this.w.player.x < 650 ||
       this.w.planetId !== "omega" ||
-      this.w.region === "ship"
+      ["ship", "station"].includes(this.w.region)
     );
   }
   portalReason(target: string) {

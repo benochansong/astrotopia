@@ -31,7 +31,7 @@ export function spacePanel(w: World) {
   const s = w.space,
     state = s.state;
   const nav =
-    '<nav class="colony-controls"><button data-action="ancient">ECHO · 고대 기록</button>' +
+    '<nav class="colony-controls"><button data-action="civilization">은하 문명 관제</button><button data-action="ancient">ECHO · 고대 기록</button>' +
     [
       ["ship", "우주선"],
       ["map", "항성계 지도"],

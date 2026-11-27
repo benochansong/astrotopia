@@ -26,7 +26,7 @@ export class PlanetPhysicsSystem {
     const w = this.w;
     return (
       w.planetId === "aquaria" &&
-      w.region !== "ship" &&
+      !["ship", "station"].includes(w.region) &&
       w.player.x > 650 &&
       w.player.y > 380
     );

@@ -334,6 +334,9 @@ export function newBattle(level = 1): BattleSave {
   };
 }
 export const subzones = {
+  station: [
+    { id: "station", start: 0, name: "STELLAR NEXUS", level: "안전 구역" },
+  ],
   ...Object.fromEntries(
     Object.values(extremeRegions).map((r) => [
       r.id,

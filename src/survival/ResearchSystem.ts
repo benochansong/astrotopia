@@ -2,6 +2,12 @@ import type { World } from "../core/world";
 import { technologies } from "./catalog";
 export class TechnologyTreeSystem {
   static branches = [
+    "물류",
+    "거대 산업",
+    "도시",
+    "궤도",
+    "복원",
+    "성간",
     "채굴",
     "소재",
     "생존",

@@ -1,3 +1,4 @@
+import { civilizationPanel } from "./civilization-ui";
 import { ancientPanel, ancientHud } from "./ancient-ui";
 import {
   defaultBindings,
@@ -39,6 +40,7 @@ import {
 } from "./battle-ui";
 import { gearTemplates, rarities } from "../data/battle";
 export type Modal =
+  | "civilization"
   | "ancient"
   | "space"
   | "colony"
@@ -261,6 +263,11 @@ export class Interface {
       eyebrow = "SYSTEM CONFIGURATION";
       content = `<div class="settings-grid"><label for="music">배경음</label><input id="music" aria-label="배경음" type="range" min="0" max="1" step="0.05" value="${s.music}" data-setting="music"><label for="sfx">효과음</label><input id="sfx" aria-label="효과음" type="range" min="0" max="1" step="0.05" value="${s.sfx}" data-setting="sfx"><label for="effects">그래픽 효과</label><select id="effects" data-setting="effects"><option value="high" ${s.effects === "high" ? "selected" : ""}>높음</option><option value="low" ${s.effects === "low" ? "selected" : ""}>낮음 · 입자 및 전경 감소</option></select></div><button class="wide" data-action="fullscreen">전체 화면 전환</button><p class="muted">설정은 자동으로 이 브라우저에 저장됩니다.</p>`;
     }
+    if (modal === "civilization" && w) {
+      heading = "은하 문명 관제 센터";
+      eyebrow = "GALACTIC CIVILIZATION";
+      content = civilizationPanel(w);
+    }
     if (modal === "ancient" && w) {
       heading = "ECHO · 고대 문명의 기록";
       eyebrow = "ANCIENT SECRETS";
@@ -450,7 +457,7 @@ export class Interface {
     if (modal === "pause" && w?.survival.sentinel.active)
       content +=
         '<button data-action="sentinel-leave">파수꾼 전투 이탈</button>';
-    this.dialog.innerHTML = `<section class="modal ${modal === "ancient" || modal === "space" || modal === "colony" || modal === "hub" || modal === "inventory" || modal === "map" || modal === "character" || modal === "skills" ? "large" : ""}" role="dialog" aria-modal="true" aria-labelledby="modal-heading"><button class="close" data-action="close" aria-label="닫기">×</button><p class="eyebrow">${eyebrow}</p><h2 id="modal-heading">${heading}</h2>${content}</section>`;
+    this.dialog.innerHTML = `<section class="modal ${modal === "civilization" || modal === "ancient" || modal === "space" || modal === "colony" || modal === "hub" || modal === "inventory" || modal === "map" || modal === "character" || modal === "skills" ? "large" : ""}" role="dialog" aria-modal="true" aria-labelledby="modal-heading"><button class="close" data-action="close" aria-label="닫기">×</button><p class="eyebrow">${eyebrow}</p><h2 id="modal-heading">${heading}</h2>${content}</section>`;
     this.screen.inert = true;
     this.hud.inert = true;
     this.dialog

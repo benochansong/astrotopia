@@ -33,11 +33,12 @@ export class ExtremeSystem {
   get active() {
     return (
       extremeIds.includes(this.w.planetId as ExtremePlanet) &&
-      this.w.region !== "ship"
+      !["ship", "station"].includes(this.w.region)
     );
   }
   get friction() {
-    return this.w.planetId === "frostia" &&
+    return this.active &&
+      this.w.planetId === "frostia" &&
       !this.w.survival.state.equipped.includes("iceBoots")
       ? this.w.settings.iceAssist
         ? 0.6

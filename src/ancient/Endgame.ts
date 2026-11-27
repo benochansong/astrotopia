@@ -209,7 +209,9 @@ export function beginChallenge(original: World, mode: string) {
 export function finishChallenge(current: World) {
   const e = current.omega.endgame;
   if (!e.original) return null;
-  const w = new World(e.original),
+  const restored = structuredClone(e.original);
+  if (restored.civilization) restored.civilization.lastClock = Date.now();
+  const w = new World(restored),
     s = w.omega.state;
   if (e.mode === "nexus")
     s.nexus.best = Math.max(s.nexus.best, e.complete ? 10 : e.floor - 1);

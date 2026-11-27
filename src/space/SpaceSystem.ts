@@ -31,17 +31,17 @@ export class SpaceSystem {
   state = newSpace();
   systems: Partial<Record<PlanetId, ColonySystem>> = {};
   combat: SpaceCombat;
-  private remoteClock = 0;
   private damageClock = 0;
   constructor(private w: World) {
     this.combat = new SpaceCombat(w);
   }
   get planet() {
-    return this.w.region === "ship"
+    return ["ship", "station"].includes(this.w.region)
       ? this.state.location
       : planetForRegion(this.w.region);
   }
   get gravity() {
+    if (this.w.region === "station") return 0.9;
     if (this.planet === "omega") return this.w.omega.gravity;
     return (
       extremePlanets[this.planet as ExtremePlanet]?.gravity ??
@@ -49,11 +49,13 @@ export class SpaceSystem {
     );
   }
   get capacity() {
-    return this.w.extreme.state.horizon
-      ? 320
-      : this.state.upgrades.includes("cargo")
-        ? 160
-        : 80;
+    return this.w.civilization?.state.odyssey
+      ? 600
+      : this.w.extreme.state.horizon
+        ? 320
+        : this.state.upgrades.includes("cargo")
+          ? 160
+          : 80;
   }
   protectedBy(kind: string) {
     return (
@@ -70,7 +72,7 @@ export class SpaceSystem {
   get storm() {
     return (
       this.planet === "ares" &&
-      this.w.region !== "ship" &&
+      !["ship", "station"].includes(this.w.region) &&
       this.state.weather >= 100 &&
       !this.protectedBy("dustShield")
     );
@@ -112,7 +114,6 @@ export class SpaceSystem {
         this.systems[id] = c;
         this.withPlanet(id, () => {
           c.initialize();
-          c.offline();
         });
       }
     }
@@ -232,6 +233,7 @@ export class SpaceSystem {
               );
     return Math.ceil(
       base *
+        (this.w.civilization.state.odyssey ? 0.75 : 1) *
         (this.state.upgrades.includes("propulsion") ? 0.8 : 1) *
         (this.w.colony.state.buildings.some(
           (b) =>
@@ -467,24 +469,8 @@ export class SpaceSystem {
       this.state.trip.remaining = Math.max(0, this.state.trip.remaining - dt);
       if (!this.state.trip.remaining) this.arrive();
     }
-    this.remoteClock += dt;
-    if (this.remoteClock >= 1) {
-      const step = Math.min(1, this.remoteClock);
-      this.remoteClock = 0;
-      for (const id of planetIds)
-        if (id !== this.state.location && this.state.planets[id])
-          this.withPlanet(id, () => {
-            w.colony.tick(step, true);
-            w.survival.production.tick(step);
-            w.colony.state.lastClock = Math.max(
-              w.colony.state.lastClock,
-              Date.now(),
-            );
-            w.survival.state.lastClock = w.colony.state.lastClock;
-          });
-    }
     if (!input) return;
-    if (w.region === "ship") {
+    if (["ship", "station"].includes(w.region)) {
       w.player.hp = Math.min(
         w.stats.hp,
         w.player.hp +

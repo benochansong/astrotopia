@@ -52,7 +52,7 @@ test("production ECHO ending confirmation, film reload and free-roam challenge r
   const saved = await page.evaluate(() =>
     JSON.parse(localStorage.getItem("astrotopia.save.v1")!),
   );
-  expect(saved.version).toBe(8);
+  expect(saved.version).toBe(9);
   expect(saved.ancient.ending).toBe("freedom");
   expect(saved.ancient.ascended).toBe(true);
   expect(saved.inventory.iron).toBe(7);

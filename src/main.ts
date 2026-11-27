@@ -1,3 +1,8 @@
+import {
+  civilizationAction,
+  civilLive,
+  civilFleet,
+} from "./ui/civilization-ui";
 import { beginChallenge, finishChallenge } from "./ancient/Endgame";
 import { ancientAction } from "./ui/ancient-ui";
 import { classAction } from "./ui/class-ui";
@@ -198,6 +203,11 @@ ui.action = (action, value) => {
     ].includes(action)
   )
     return;
+  if (world && civilizationAction(world, action, value, ui.dialog)) {
+    if (["cv-visit", "cv-leave"].includes(action)) closeModal();
+    else ui.open("civilization", world, settings);
+    return;
+  }
   if (world && action.startsWith("cl-")) {
     if (action === "cl-trial") {
       const [id, tier, trialMode] = (value ?? "").split(":");
@@ -300,6 +310,7 @@ ui.action = (action, value) => {
       "character",
       "skills",
       "ancient",
+      "civilization",
     ].includes(action)
   ) {
     if (
@@ -634,10 +645,15 @@ class ExpeditionScene extends Phaser.Scene {
       )
         startGame();
     } else if (world) {
+      world.civilization.state.lastClock = Math.max(
+        Date.now(),
+        world.civilization.state.lastClock,
+      );
       if (world.colony.buildMode) {
         world.colony.tick(dt);
         world.survival.production.tick(dt);
         world.space.tick(dt);
+        world.civilization.tick(dt);
         const c = world.colony,
           v = c.view,
           speed = (650 * dt) / v.zoom;
@@ -675,6 +691,8 @@ class ExpeditionScene extends Phaser.Scene {
       ) {
         if (!world.colony.siege) world.colony.tick(dt);
         world.survival.production.tick(dt);
+        world.space.tick(dt);
+        world.civilization.tick(dt);
       }
       if (
         ui.modal === "colony" &&
@@ -691,6 +709,15 @@ class ExpeditionScene extends Phaser.Scene {
         const queue = ui.dialog.querySelector("#production-queue");
         if (queue) queue.innerHTML = productionQueue(world);
       }
+      if (
+        ui.modal === "civilization" &&
+        Math.floor(ambientTime * 2) !== Math.floor((ambientTime - dt) * 2)
+      ) {
+        const live = ui.dialog.querySelector("#civil-live");
+        if (live) live.innerHTML = civilLive(world);
+        const fleet = ui.dialog.querySelector("#civil-fleet");
+        if (fleet) fleet.innerHTML = civilFleet(world);
+      }
       if (ui.modal === "space") {
         const flight = ui.dialog.querySelector("#flight-time");
         if (flight) {
@@ -702,7 +729,8 @@ class ExpeditionScene extends Phaser.Scene {
       }
       for (const event of world.events.splice(0)) {
         if (event.type === "facility") {
-          if (event.text === "ancient") openModal("ancient");
+          if (event.text === "civilization") openModal("civilization");
+          else if (event.text === "ancient") openModal("ancient");
           else if (event.text === "space") openModal("space");
           else if (event.text === "colony") openModal("colony");
           else {

@@ -1,3 +1,5 @@
+import { newCivilization } from "../civilization/types";
+import { validCivilization } from "./civilization-schema";
 import { newAncient, validAncient } from "./ancient-schema";
 import { newClass } from "../classes/types";
 import { classes } from "../classes/catalog";
@@ -79,7 +81,7 @@ export function parseSave(raw: string | null): SaveData | null {
     const s = JSON.parse(raw);
     if (
       !object(s) ||
-      ![1, 2, 3, 4, 5, 6, 7, 8].includes(Number(s.version)) ||
+      ![1, 2, 3, 4, 5, 6, 7, 8, 9].includes(Number(s.version)) ||
       !regionOrder.includes(s.region as never) ||
       !finite(s.savedAt, 0, 1e15) ||
       !finite(
@@ -210,6 +212,7 @@ export function parseSave(raw: string | null): SaveData | null {
         s.survival,
         String(s.region),
         Boolean((s.extreme as any)?.horizon),
+        Boolean((s.civilization as any)?.odyssey),
       )
     )
       return null;
@@ -221,7 +224,16 @@ export function parseSave(raw: string | null): SaveData | null {
     if (Number(s.version) < 8) s.ancient = newAncient();
     if (!validAncient(s.ancient)) return null;
     if (String(s.region).startsWith("omega") && !s.ancient.visited) return null;
-    s.version = 8;
+    if (Number(s.version) < 9)
+      s.civilization = newCivilization(Number(s.savedAt));
+    if (!validCivilization(s.civilization, s.space)) return null;
+    if (
+      s.region === "station" &&
+      (!(s.civilization as any).station.stage ||
+        !(s.civilization as any).station.visited)
+    )
+      return null;
+    s.version = 9;
     return s as unknown as SaveData;
   } catch {
     return null;
@@ -251,6 +263,11 @@ export class SaveStore {
   }
   save(data: SaveData): boolean {
     try {
+      if (!parseSave(JSON.stringify(data))) {
+        this.error =
+          "저장 검증에 실패했습니다. 기존 저장 데이터를 보존했습니다.";
+        return false;
+      }
       const previous = this.storage.getItem(SAVE_KEY);
       let legacy = false;
       try {
@@ -263,7 +280,7 @@ export class SaveStore {
       if (previous) {
         try {
           if (
-            [2, 3, 4, 5, 6, 7].includes(JSON.parse(previous).version) &&
+            [2, 3, 4, 5, 6, 7, 8].includes(JSON.parse(previous).version) &&
             !this.storage.getItem(
               SAVE_KEY + ".backup.v" + JSON.parse(previous).version,
             )

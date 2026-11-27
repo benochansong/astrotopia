@@ -103,7 +103,7 @@ it("rejects malformed cargo/trips and preserves legacy progress", () => {
   delete s.space;
   s.region = "crash";
   const m = parseSave(JSON.stringify(s));
-  expect(m?.version).toBe(8);
+  expect(m?.version).toBe(9);
   expect(m?.colony.ship).toEqual(w.colony.state.ship);
 });
 it("requires actual gear and fuel; local renewable fuel cannot overfill", () => {
@@ -132,7 +132,7 @@ it("simulates remote colonies without moving the active player or consuming acti
     c = w.colony;
   w.space.capture();
   const day = w.space.state.planets.eden!.colony.day;
-  w.space.tick(1);
+  w.civilization.tick(1);
   expect(w.colony).toBe(c);
   expect(w.region).toBe("aresLanding");
   expect(w.player.x).toBe(x);
